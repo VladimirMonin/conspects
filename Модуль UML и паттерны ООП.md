@@ -5165,42 +5165,39 @@ scale 800 height
 skinparam BackgroundColor #FFE4B5
 skinparam classBackgroundColor #LightYellow
 
-abstract class GameEntityCreator {
-  {abstract} +createEntity() : GameEntity
+abstract class GamePersonCreator {
+  {abstract} +createPerson() : GamePerson
 }
 
-class EnemyCreator extends GameEntityCreator {
-  +createEntity() : GameEntity
+class EnemyCreator extends GamePersonCreator {
+  +createPerson() : GamePerson
 }
 
-class BonusCreator extends GameEntityCreator {
-  +createEntity() : GameEntity
+class NPCCreator extends GamePersonCreator {
+  +createPerson() : GamePerson
 }
 
-interface GameEntity {
+interface GamePerson {
 }
 
-class Enemy implements GameEntity {
+class Enemy implements GamePerson {
 }
 
-class Bonus implements GameEntity {
+class NPC implements GamePerson {
 }
 
-GameEntityCreator <|-- EnemyCreator
-GameEntityCreator <|-- BonusCreator
-GameEntity <|.. Enemy
-GameEntity <|.. Bonus
+
 
 legend
     **Фабричный метод: Пример создания игровых объектов в игровом движке**
     | Элементы             | Описание                                   |
-    |----------------------|--------------------------------------------|
-    | GameEntityCreator    | Абстрактный класс создателя, объявляющий метод createEntity, который возвращает объект GameEntity. |
-    | EnemyCreator/BonusCreator | Конкретные реализации создателя для врагов и бонусов, переопределяющие метод createEntity. |
-    | GameEntity           | Интерфейс игрового объекта.                |
-    | Enemy/Bonus          | Конкретные игровые объекты, создаваемые разными создателями. |
+    | GamePersonCreator    | Абстрактный класс создателя, объявляющий метод createEntity, который возвращает объект GamePerson. |
+    | EnemyCreator/NPCCreator | Конкретные реализации создателя для врагов и бонусов, переопределяющие метод createEntity. |
+    | GamePerson           | Интерфейс игрового объекта.                |
+    | Enemy/NPC          | Конкретные игровые объекты, создаваемые разными создателями. |
     
-    Примечание: Каждый конкретный создатель способен создавать объекты своего типа, обеспечивая гибкость и расширяемость игровой логики.
+    Примечание: Каждый конкретный создатель способен создавать объекты своего типа, 
+    обеспечивая гибкость и расширяемость игровой логики.
 endlegend
 
 @enduml
@@ -5213,36 +5210,42 @@ endlegend
 scale 800 height
 skinparam BackgroundColor #FFE4B5
 
-actor Gamer as "Gamer"
-participant "GameEntityCreator" as Creator
-participant "EnemyCreator" as EnemyCr
-participant "Enemy" as Enemy
-participant "GameWorld" as World
+actor "Game World" as world
+participant "GamePersonCreator" as creator
+participant "EnemyCreator" as enemyCreator
+participant "Enemy" as enemy
+participant "NPCCreator" as npcCreator
+participant "NPC" as npc
 
-Gamer -> World : spawnEntity("Enemy")
-activate World
-World -> EnemyCr : createEntity()
-activate EnemyCr
-EnemyCr -> Enemy : new
-activate Enemy
-EnemyCr --> World : return Enemy
-deactivate EnemyCr
-World --> Gamer : Enemy spawned
-deactivate World
+== Создание врага ==
+world -> enemyCreator : createPerson()
+activate enemyCreator
+enemyCreator -> enemy : new
+activate enemy
+enemyCreator --> world : return enemy
+deactivate enemy
+deactivate enemyCreator
+
+== Создание NPC ==
+world -> npcCreator : createPerson()
+activate npcCreator
+npcCreator -> npc : new
+activate npc
+npcCreator --> world : return npc
+deactivate npc
+deactivate npcCreator
 
 legend
-    **Процесс создания вражеского персонажа в игре**
+    **Процесс создания игровых персонажей через Фабричный метод**
     | Этапы                  | Описание                                                               |
-    |-----------------------|------------------------------------------------------------------------|
-    | Gamer -> World        | Игрок запрашивает создание врага в игровом мире.                      |
-    | World -> EnemyCreator | Игровой мир использует конкретный создатель для создания врага.       |
-    | EnemyCreator -> Enemy | EnemyCreator создает новый экземпляр врага.                           |
-    | World --> Gamer       | В игровой мир возвращается созданный враг, и игрок получает уведомление о его появлении. |
+    | Создание врага        | "Game World" запрашивает создание врага через "EnemyCreator", который использует метод createPerson для создания и возвращения объекта "Enemy". |
+    | Создание NPC          | "Game World" запрашивает создание NPC через "NPCCreator", который использует метод createPerson для создания и возвращения объекта "NPC". |
     
-    Примечание: Этот процесс демонстрирует, как фабричный метод позволяет игровому миру генерировать различные типы игровых объектов в зависимости от ситуации.
+    Примечание: Диаграмма демонстрирует гибкость в создании различных типов игровых объектов с использованием фабричного метода, позволяя легко добавлять новые типы персонажей.
 endlegend
 
 @enduml
+
 ```
 
 Эти диаграммы иллюстрируют применение паттерна "Фабричный метод" для создания различных типов игровых объектов в игровом движке, обеспечивая гибкость и расширяемость в разработке игр.
@@ -5439,7 +5442,7 @@ class ConcreteComponent implements Component {
 +execute() : void
 }
 
-class Decorator implements Component {
+abstract Decorator implements Component {
 Класс декоратора, содержащий ссылку на компонент
 и реализующий интерфейс Component
 --
@@ -5469,37 +5472,39 @@ ConcreteComponent - Decorator
 @startuml
 scale 800 height
 skinparam BackgroundColor #FFE4B5
-  
 
 participant "Client" as client
 participant "TimeLoggingDecorator" as tld
 participant "ConcreteComponent" as cc
 
-  
-client -> tld : execute()
+title Процесс декорирования с замером времени выполнения
+
+client -> cc : execute()
+activate client
+cc --> tld : execute()
 activate tld
 tld -> tld : Засекает стартовое время
 tld -> cc : execute()
 activate cc
-cc --> tld : Завершает задачу
+cc -> cc : Проводит задачу
+cc --> tld : Отдает результат выполнения
 deactivate cc
 tld -> tld : Засекает конечное время и \n рассчитывает время выполнения
 tld --> client : Отображает время выполнения в консоли
 tld -> client : Возвращает результат выполнения задачи
 deactivate tld
 
-  
 legend
-**Процесс декорирования с замером времени выполнения**
-| Этапы                  | Описание                                                               |
-| Client -> TimeLoggingDecorator | Клиент вызывает метод execute() на TimeLoggingDecorator.              |
-| TimeLoggingDecorator -> ConcreteComponent | TimeLoggingDecorator делегирует выполнение задачи вложенному ConcreteComponent. |
-| TimeLoggingDecorator -> TimeLoggingDecorator | Перед и после делегирования задачи, TimeLoggingDecorator засекает время, \n рассчитывает продолжительность выполнения и выводит её в консоль. |
-Примечание: Этот процесс демонстрирует, как декоратор может добавлять новую функциональность
-(в данном случае, замер времени) к существующему компоненту без изменения его кода.
+    **Процесс декорирования с замером времени выполнения**
+    | Этапы                  | Описание                                                               |
+    | Client -> TimeLoggingDecorator | Клиент вызывает метод execute() на TimeLoggingDecorator.              |
+    | TimeLoggingDecorator -> ConcreteComponent | TimeLoggingDecorator делегирует выполнение задачи вложенному ConcreteComponent. |
+    | TimeLoggingDecorator -> TimeLoggingDecorator | Перед и после делегирования задачи, TimeLoggingDecorator засекает время, \n рассчитывает продолжительность выполнения и выводит её в консоль. |
+    
+    Примечание: Этот процесс демонстрирует, как декоратор может добавлять новую функциональность 
+    (в данном случае, замер времени) к существующему компоненту без изменения его кода.
 endlegend
 
- 
 @enduml
 ```
 
@@ -5894,8 +5899,8 @@ class CheckoutService {
 }
 
 CheckoutService -right-> PaymentGateway : использует >
-StripeAdapter .right.> Stripe : адаптирует >
-PayPalAdapter .right.> PayPal : адаптирует >
+StripeAdapter .down.> Stripe : адаптирует >
+PayPalAdapter .down.> PayPal : адаптирует >
 
 legend
   **Паттерн**: Адаптер
@@ -5909,7 +5914,9 @@ legend
   **Решение**:
   - **PaymentGateway**: Общий интерфейс для всех внешних платежных систем.
   - **Stripe**, **PayPal**: Существующие классы, предоставляемые платежными системами.
-  - **StripeAdapter**, **PayPalAdapter**: Реализуют интерфейс PaymentGateway, инкапсулируя взаимодействие с платежными системами и переводя вызовы из общего интерфейса в вызовы, специфичные для каждой системы.
+  - **StripeAdapter**, **PayPalAdapter**: Реализуют интерфейс PaymentGateway,
+    инкапсулируя взаимодействие с платежными системами и переводя вызовы из общего интерфейса
+    в вызовы, специфичные для каждой системы.
   - **CheckoutService**: Использует PaymentGateway для обработки платежей, абстрагируясь от деталей конкретных платежных систем.
 
   **Преимущества**:
@@ -5918,7 +5925,8 @@ legend
   - Изоляция изменений: Изменения в API платежных систем затрагивают только соответствующие адаптеры.
 
   **Примечание**:
-  - Эта диаграмма UML иллюстрирует структуру и взаимосвязи паттерна Адаптер в контексте интеграции нескольких платежных систем в единую архитектуру.
+  - Эта диаграмма UML иллюстрирует структуру и взаимосвязи паттерна Адаптер в контексте 
+    интеграции нескольких платежных систем в единую архитектуру.
 endlegend
 
 @enduml
@@ -5977,103 +5985,6 @@ endlegend
 ```
 
 
-
-```plantuml
-@startuml
-
-skinparam class {
-    BackgroundColor LightYellow
-    BorderColor black
-}
-
-class City {
-    - name: str
-    - population: int
-    - district: str
-    - subject: str
-    - lat: float
-    - lon: float
-}
-
-class CityValidator {
-    - city: dict
-    + validate(city: dict): dict
-}
-
-class CitySerializer {
-    - __city: Union[None | Dict | City]
-    - __city_validator: CityValidator
-    + __city_validate(city: dict): dict
-    + serialize(city: City): dict
-    + deserialize(data): City
-}
-
-City --|> CitySerializer
-CitySerializer <|-- CityValidator
-
-legend
-  scale 800 height
-  BackgroundColor #FFE4B5
-
-  |=== Validation Legend ===|
-  | Object | Explanation       |
-  | City   | Represents a city |
-  | CityValidator | Validates city data before serialization |
-  | CitySerializer | Serializes and deserializes city data |
-  |---------------------------|
-  | name       | Name of the city       |
-  | population | Population of the city |
-  | district   | District of the city   |
-  | subject    | Subject of the city    |
-  | lat        | Latitude of the city   |
-  | lon        | Longitude of the city  |
-  |---------------------------|
-  | validate(city: dict): dict | Validates city data and returns validated dictionary |
-  | serialize(city: City): dict | Serializes city data into dictionary |
-  | deserialize(data): City | Deserializes dictionary into City object |
-endlegend
-
-@enduml
-```
-
-
-
-
-
-```plantuml
-@startuml
-
-skinparam sequence {
-    BackgroundColor LightYellow
-    BorderColor black
-}
-
-participant Client
-participant CitySerializer
-participant CityValidator
-participant City
-
-Client -> CitySerializer: serialize(city)
-activate CitySerializer
-CitySerializer -> CitySerializer: __city_validate(city)
-activate CitySerializer
-CitySerializer -> CityValidator: validate(city)
-activate CityValidator
-CityValidator -> City: city["name"], city["population"], city["district"], city["subject"], city["coords"]
-activate City
-City --> CityValidator: name, population, district, subject, coords
-deactivate City
-CityValidator --> CitySerializer: validated city
-deactivate CityValidator
-CitySerializer --> CitySerializer: serialize validated city
-deactivate CitySerializer
-CitySerializer --> Client: serialized data
-deactivate CitySerializer
-
-@enduml
-```
-
-
 ## Паттерн "Прокси"
 
 ### История возникновения
@@ -6106,7 +6017,7 @@ deactivate CitySerializer
 >[!warning] 
 >Использование прокси может ввести дополнительную сложность в архитектуру программного обеспечения и замедлить выполнение операций из-за дополнительного уровня абстракции.
 
-Паттерн "Прокси" является мощным инструментом проектирования, позволяющим решать различные задачи, связанны анные с контролем доступа к объектам, управлением ресурсами и оптимизацией производительности. Однако, как и любой другой инструмент, он должен использоваться с умом и пониманием контекста, в котором он применяется. Необходимо тщательно взвешивать преимущества добавления прокси в вашу систему против потенциального увеличения сложности и снижения производительности.
+Паттерн "Прокси" является мощным инструментом проектирования, позволяющим решать различные задачи, связанныанные с контролем доступа к объектам, управлением ресурсами и оптимизацией производительности. Однако, как и любой другой инструмент, он должен использоваться с умом и пониманием контекста, в котором он применяется. Необходимо тщательно взвешивать преимущества добавления прокси в вашу систему против потенциального увеличения сложности и снижения производительности.
 
 ### Преимущества и недостатки паттерна "Прокси"
 
@@ -6173,6 +6084,8 @@ skinparam class {
     BorderColor DarkSlateGray
 }
 
+title Защитный прокси
+
 class Document {
     {abstract} +open()
     {abstract} +read()
@@ -6190,15 +6103,11 @@ class ProtectedDocumentProxy {
 
 Document <|.. RealDocument
 Document <|.. ProtectedDocumentProxy
+ProtectedDocumentProxy -up-> RealDocument
 
-note right of ProtectedDocumentProxy : Прокси контролирует\nдоступ к RealDocument,\nвыполняя проверку прав доступа\nперед делегированием вызовов.
+note bottom of ProtectedDocumentProxy : Прокси контролирует\nдоступ к RealDocument,\nвыполняя проверку прав доступа\nперед делегированием вызовов.
 
-legend right
-|===
-| **Цвет** | **Элемент** 
-| #LightYellow | Классы
-|===
-endlegend
+
 
 @enduml
 ```
@@ -6246,6 +6155,43 @@ endlegend
 
 Эти диаграммы дают подробное представление о структуре и взаимодействиях внутри паттерна "Защитный Прокси" для контроля доступа к документу. Диаграмма классов наглядно демонстрирует структуру классов и их отношения, в то время как диаграмма последовательности показывает динамику взаимодействия между объектами во время выполнения операций.
 
+---
+
+## Поведенческие паттерны
+
+Поведенческие паттерны в объектно-ориентированном программировании (ООП) — это шаблоны, которые занимаются эффективным и интуитивно понятным управлением, организацией и взаимодействием между объектами в программе. В отличие от структурных паттернов, которые помогают строить удобные в использовании иерархии классов, или порождающих паттернов, направленных на гибкое создание объектов, поведенческие паттерны сосредоточены на "поведении" — как объекты выполняют свои задачи и взаимодействуют друг с другом для выполнения общей задачи.
+
+Поведенческие паттерны помогают решать задачи, связанные с распределением обязанностей между объектами, делая систему более гибкой и поддерживаемой. Они упрощают сложные потоки управления между объектами и способствуют более четкому определению ролей для каждого из объектов в системе.
+
+### Основные характеристики и принципы
+
+1. **Распределение обязанностей**: Поведенческие паттерны определяют, как различные объекты и классы отправляют запросы и как эти запросы распределяются между ними для выполнения задач.
+2. **Взаимодействие между объектами**: Они фокусируются на том, как объекты общаются и взаимодействуют для выполнения операций, облегчая таким образом управление сложными потоками выполнения задач.
+3. **Гибкость и расширяемость**: Паттерны позволяют системе быть более адаптируемой к изменениям, упрощая добавление нового поведения или изменение существующего без значительного переписывания кода.
+
+### Примеры поведенческих паттернов
+
+1. **Наблюдатель (Observer)**: Позволяет одним объектам подписываться и реагировать на события, происходящие в других объектах, без жесткой связи между ними.
+2. **Стратегия (Strategy)**: Определяет семейство алгоритмов, инкапсулирует каждый из них и делает их взаимозаменяемыми. Стратегия позволяет алгоритму изменяться независимо от клиентов, которые его используют.
+3. **Состояние (State)**: Позволяет объекту изменять свое поведение в зависимости от своего состояния. Это делается через изменение текущего объекта состояния на другой.
+4. **Команда (Command)**: Превращает запросы в объекты, позволяя передавать их как аргументы при вызове методов, ставить запросы в очередь, логировать их и поддерживать отмену операций.
+
+### Преимущества использования поведенческих паттернов
+
+- **Улучшение коммуникации**: Облегчают и делают более понятным общение между объектами в системе.
+- **Повышение гибкости**: Позволяют системе легко адаптироваться к изменениям за счет возможности добавления нового поведения или изменения существующего без глубоких модификаций в коде.
+- **Реюзабельность кода**: Поведенческие паттерны способствуют созданию модульного кода, который легче повторно использовать в различных частях приложения или даже в разных проектах.
+- **Упрощение сложных систем**: Помогают управлять сложными потоками управления и взаимодействиями между объектами, сокращая зависимости и делая систему более прозрачной.
+
+### Важные моменты при использовании поведенческих паттернов
+
+>[!warning]
+>Хотя поведенческие паттерны предлагают мощные инструменты для организации взаимодействия между объектами, они могут внести дополнительную сложность в архитектуру, если используются бездумно. Важно оценивать, стоит ли применять паттерн для решения конкретной проблемы, учитывая потребности и сложность проекта.
+
+>[!info]
+>Поведенческие паттерны часто используются в комбинации с другими паттернами проектирования для создания гибких и масштабируемых архитектур. Например, паттерн "Стратегия" может быть использован вместе с "Фабрикой" (порождающий паттерн) для динамического выбора алгоритмов в зависимости от контекста.
+
+Использование поведенческих паттернов в проекте требует тщательного планирования и понимания как задач, так и потенциальных последствий их применения. Правильно примененные, они могут значительно улучшить качество кода и облегчить дальнейшую поддержку и развитие приложения.
 
 
 ## Паттерн "Стратегия"
@@ -6324,6 +6270,8 @@ skinparam class {
     BorderColor DarkSlateGray
 }
 
+title Стратегия (Strategy)\nна примере сортировки
+
 interface SortStrategy {
     {abstract} +sort()
 }
@@ -6352,12 +6300,11 @@ SortStrategy <|.. BubbleSort
 SortContext ..> SortStrategy : uses >
 
 legend right
-|===
-| **Элемент** | **Описание** 
-| **SortStrategy** | Интерфейс, определяющий операцию сортировки
-| **QuickSort, MergeSort, BubbleSort** | Конкретные стратегии сортировки, реализующие SortStrategy
-| **SortContext** | Контекст, использующий стратегию сортировки
-|===
+**Стратегия сортировки**
+| **Элемент** | **Описание** |
+| **SortStrategy** | Интерфейс, определяющий операцию сортировки|
+| **QuickSort, MergeSort, BubbleSort** | Конкретные стратегии сортировки, реализующие SortStrategy|
+| **SortContext** | Контекст, использующий стратегию сортировки|
 endlegend
 
 @enduml
@@ -6396,6 +6343,145 @@ endlegend
 Эти диаграммы представляют структурный обзор и поток выполнения для системы сортировки данных, использующей паттерн "Стратегия". Диаграмма классов показывает, как реализованы и взаимодействуют различные компоненты системы, а диаграмма последовательности демонстрирует, как клиент может изменять алгоритм сортировки в рантайме, выбирая разные стратегии.
 
 
+### Задание: Разработка Игровой Логики с Применением Паттерна Стратегия для Выбора Оружия
+
+**Цель задания:** Создать упрощенную модель игровой логики, позволяющую персонажу динамически менять оружие (меч, лук, магия) с использованием паттерна стратегия. Задание включает в себя разработку диаграммы классов и диаграммы последовательности для визуализации структуры и взаимодействия классов.
+
+#### Содержание задания:
+
+**1. Диаграмма классов**
+
+- **Класс `Character` (Персонаж):** Основной класс, который содержит атрибут для хранения ссылки на текущую стратегию использования оружия (атрибут `weaponBehavior`). Должен включать метод `setWeapon(WeaponBehavior weaponBehavior)`, позволяющий изменять стратегию оружия.
+- **Интерфейс `WeaponBehavior` (Поведение Оружия):** Определяет метод `useWeapon()`, который реализуется различными стратегиями оружия.
+- **Классы стратегий `SwordBehavior`, `BowBehavior`, `MagicBehavior` (Поведение Меча, Лука, Магии):** Реализуют интерфейс `WeaponBehavior`, переопределяя метод `useWeapon()` для демонстрации использования соответствующего типа оружия.
+
+**2. Диаграмма последовательности**
+
+- Показать, как объект `Character` создается и как ему присваивается начальное оружие через конструктор или метод `setWeapon()`.
+- Демонстрация изменения оружия персонажа во время выполнения программы, показывающая последовательность вызовов метода `setWeapon()` и `useWeapon()`.
+
+#### Критерии проверки:
+
+1. **Полнота реализации диаграммы классов:**
+   - Проверить наличие всех требуемых классов и интерфейсов.
+   - Корректность отношений между классами, включая агрегацию и реализацию.
+   - Правильность именования классов, методов и атрибутов.
+
+2. **Точность диаграммы последовательности:**
+   - Четкое изображение процесса смены оружия персонажем.
+   - Правильное отображение вызовов методов и передачи сообщений между объектами.
+   - Понятность и последовательность взаимодействий, отражающих логику паттерна стратегия.
+
+3. **Соответствие заданию:**
+   - Задание должно быть выполнено с использованием паттерна стратегия.
+   - Должна быть продемонстрирована гибкость в изменении поведения персонажа благодаря использованию различных стратегий.
+
+Это задание не только поможет студентам лучше понять паттерн стратегия, но и научит их проектированию гибких систем, готовых к изменениям требований.
+
+Давай начнем с диаграммы классов для предложенного примера. В этой диаграмме будет представлена структура классов с использованием паттерна стратегия для системы выбора оружия персонажем.
+
+```plantuml
+@startuml
+scale 800 height
+skinparam BackgroundColor #FFE4B5
+
+class Character {
+  #weaponBehavior : WeaponBehavior
+  +setWeapon(weaponBehavior : WeaponBehavior) : void
+}
+
+interface WeaponBehavior {
+  +useWeapon() : void
+}
+
+class SwordBehavior {
+  +useWeapon() : void
+}
+
+class BowBehavior {
+  +useWeapon() : void
+}
+
+class MagicBehavior {
+  +useWeapon() : void
+}
+
+Character -right-> WeaponBehavior : uses >
+WeaponBehavior <|.. SwordBehavior : implements
+WeaponBehavior <|.. BowBehavior : implements
+WeaponBehavior <|.. MagicBehavior : implements
+
+legend
+== Легенда ==
+{| border="1"
+! Элемент !! Описание
+|-
+| Character || Класс персонажа, содержит ссылку на стратегию оружия и метод для ее изменения.
+|-
+| WeaponBehavior || Интерфейс стратегии, определяет метод useWeapon для использования оружия.
+|-
+| SwordBehavior, BowBehavior, MagicBehavior || Конкретные стратегии, реализуют различные способы использования оружия.
+|}
+
+{| border="1"
+! Цвета и Стили !! Применение
+|-
+| #LightYellow || Используется для фона классов и интерфейсов, добавляет визуальную легкость и читаемость.
+|}
+
+endlegend
+@enduml
+```
+
+Теперь перейдем к диаграмме последовательности, которая демонстрирует, как персонаж меняет оружие во время выполнения программы.
+
+```plantuml
+@startuml
+scale 800 height
+skinparam BackgroundColor #FFE4B5
+
+actor Player
+participant "Character" as Character
+participant "WeaponBehavior" as WeaponBehavior
+participant "SwordBehavior" as Sword
+participant "BowBehavior" as Bow
+
+Player -> Character: create
+Player -> Character: setWeapon(Sword)
+Character -> Sword: useWeapon()
+activate Sword
+deactivate Sword
+
+Player -> Character: setWeapon(Bow)
+Character -> Bow: useWeapon()
+activate Bow
+deactivate Bow
+
+legend
+== Легенда ==
+{| border="1"
+! Элемент !! Описание
+|-
+| Player || Игрок, инициирующий создание персонажа и выбор оружия.
+|-
+| Character || Персонаж игры, демонстрирующий использование паттерна стратегия.
+|-
+| WeaponBehavior || Интерфейс для стратегий оружия, не показан непосредственно, но важен для понимания.
+|-
+| SwordBehavior, BowBehavior || Конкретные стратегии оружия, с которыми взаимодействует персонаж.
+|}
+
+{| border="1"
+! Цвета и Стили !! Применение
+|-
+| #LightYellow || Используется для актеров и объектов, улучшает визуальное восприятие.
+|}
+
+endlegend
+@enduml
+```
+
+Эти диаграммы представляют собой простую визуализацию применения паттерна стратегия в игровой логике выбора оружия. Легенды подробно описывают элементы и их назначение, обеспечивая понимание структуры и процессов.
 ## Паттерн "Наблюдатель"
 
 ### История возникновения
@@ -6923,3 +7009,4 @@ endlegend
 ```
 
 Эти диаграммы вместе предоставляют полное понимание того, как реализован паттерн "Состояние" в контексте музыкального плеера. Диаграмма классов демонстрирует структуру классов и их взаимосвязи, позволяя понять, как система может переключаться между разными состояниями. Диаграмма состояний показывает динамику переходов между состояниями в ответ на взаимодействия пользователя, демонстрируя гибкость и мощь паттерна "Состояние" в управлении поведением объекта.
+
