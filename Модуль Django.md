@@ -7004,6 +7004,14 @@ def catalog(request):
 
 Таким образом, кэширование позволит уменьшить нагрузку на базу данных и ускорить отображение страницы пользователям за счет сохранения готового ответа на заданный период времени.
 
+
+Кешировать класс представления можно через конфигурацию `urls.py`
+```python
+path('catalog/', cache_page(60*15)(views.CatalogView.as_view()), name='catalog'),
+```
+#todo Доделать
+
+
 ## Как читать анализ кеша?
 
 Анализируем эффективность и результаты кеширования с Django Debug Toolbar, используя понятный и подробный язык:
@@ -9721,93 +9729,459 @@ def add_card(request):
 
 ## Формы. Загрузка данных
 
-48
+Чтобы создать простую форму для загрузки файлов в Django 4.2, следуйте инструкции ниже. Этот процесс включает создание HTML-формы в шаблоне Django с использованием наследования шаблона и обеспечение корректной обработки файлов на сервере с помощью атрибута `enctype`.
 
-Максимально подробно опиши эту инструкцию так, чтобы поней можно было написать нужный код Джанго 4.2. Сделай все нужные блоки кода. В них можешь в важных местах вставить комментарии на русском язке. Потом описать что это.
+### Шаги для создания формы загрузки файлов
+
+1. **Создание базового шаблона `base.html`**
+
+   Для начала, убедитесь, что у вас есть базовый шаблон, который будут наследовать другие шаблоны. В этом примере, `base.html` будет содержать базовую структуру HTML-страницы и подключение Bootstrap 5 для стилизации.
+
+   ```html
+   <!-- base.html -->
+   <!DOCTYPE html>
+   <html lang="ru">
+   <head>
+     <meta charset="UTF-8">
+     <title>Загрузка файла</title>
+     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet">
+     <style>
+       body { background-color: #343a40; color: #f8f9fa; } /* Основные стили темной темы */
+     </style>
+   </head>
+   <body>
+     <div class="container mt-5">
+       {% block content %}{% endblock %}
+     </div>
+   </body>
+   </html>
+   ```
+
+2. **Создание шаблона для формы**
+
+   Создайте шаблон, который расширяет `base.html` и включает форму для загрузки файлов. Важно использовать `enctype="multipart/form-data"` для формы, поскольку этот атрибут необходим для корректной отправки файлов на сервер.
+
+   ```html
+   <!-- upload.html -->
+   {% extends 'base.html' %}
+
+   {% block content %}
+   <h2>Загрузка файла</h2>
+   <form action="{% url 'file_upload' %}" method="post" enctype="multipart/form-data">
+     {% csrf_token %}
+     <div class="mb-3">
+       <label for="file_upload" class="form-label">Выберите файл для загрузки</label>
+       <input type="file" class="form-control" id="file_upload" name="file_upload">
+     </div>
+     <button type="submit" class="btn btn-primary">Отправить</button>
+   </form>
+   {% endblock %}
+   ```
+
+### Пояснения
+
+- **Enctype "multipart/form-data"**: Этот атрибут формы необходим при работе с файлами. Он указывает браузеру на необходимость отправки файлов в формате, который позволяет серверу принимать файлы. Без этого атрибута, содержимое файлов будет отправлено как обычный текст, что приведет к их некорректной обработке и возможной потере данных.
+
+- **CSRF Token**: Токен CSRF (Cross-Site Request Forgery) используется для защиты от атак, при которых злоумышленник может отправлять запросы от вашего имени, если вы уже аутентифицированы на сайте. Вставка `{% csrf_token %}` в форму создает скрытое поле, которое добавляет серверный токен к вашей форме, гарантируя, что запрос отправлен именно через вашу форму на сайте.
+
+- **Input type file**: Элемент `<input type="file">` создает в форме поле для выбора файла, который затем можно отправить на сервер. Имя (`name`) этого поля используется на сервере для доступа к файлу после его отправки.
+
+Эта форма теперь может быть использована для отправки файлов на сервер в Django-проекте, где обработчик формы на стороне сервера будет использовать полученные данные для сохранения файла или дальнейшей обработки.
+
+Для реализации функциональности загрузки файлов на сервер в Django 4.2 с использованием Bootstrap 5 и стилей темной темы, можно следовать приведенным ниже инструкциям. Задача состоит в создании не привязанной к модели формы для загрузки файлов, обработке загруженных файлов и сохранении их на сервере.
+
+### 1. Создание формы для загрузки файлов
+
+Для начала, создадим простую форму Django, которая не привязана к модели. Эта форма будет содержать одно поле для файлов:
+
+```python
+# forms.py
+from django import forms
+
+class UploadFileForm(forms.Form):
+    file = forms.FileField(label='Файл')
+```
+
+### 2. Обработка загруженных файлов
+
+Создадим функцию в `views.py`, которая будет обрабатывать загруженные файлы. Для этого мы используем метод `chunks()`, который рекомендуется для обработки больших файлов, так как он считывает файл порциями и предотвращает загрузку всего файла в память.
+
+```python
+# views.py
+import os
+from django.conf import settings
+from .forms import UploadFileForm
+
+def handle_uploaded_file(f):
+    # Создаем путь к директории 'uploads', если он не существует
+    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'uploads'), exist_ok=True)
+    with open(os.path.join(settings.MEDIA_ROOT, 'uploads', f.name), 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+```
+
+### 3. Функция представления для обработки запросов
+
+Функция представления будет обрабатывать как GET, так и POST запросы. При POST запросе файл будет сохранен, при GET запросе будет предоставлена форма для загрузки файла.
+
+```python
+# views.py
+from django.shortcuts import render, redirect
+
+def upload_file(request):
+    if request.method == 'POST':
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            handle_uploaded_file(request.FILES['file'])
+            return redirect('success_url')  # Перенаправление на страницу успеха
+    else:
+        form = UploadFileForm()
+    return render(request, 'upload.html', {'form': form})
+```
+
+### 4. HTML шаблон для формы
+
+Создадим HTML шаблон `upload.html` с использованием Bootstrap 5 для стилизации. Форма будет отправлена методом POST с указанием `enctype="multipart/form-data"`, который необходим для корректной передачи файлов.
+
+```html
+<!-- upload.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Загрузка файла</h2>
+<form action="{% url 'upload_file' %}" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Отправить</button>
+</form>
+{% endblock %}
+```
+
+### Объяснения
+
+- **Метод `read()` и `chunks()`**: Метод `read()` считывает весь файл в память, что может привести к проблемам при работе с большими файлами. Метод `chunks()` считывает файл по частям (порциями), что более эффективно и безопасно для сервера.
+- **FileField и ImageField**: `FileField` используется для загрузки файлов, а `ImageField` — для изображений. `ImageField` требует наличие библиотеки Pillow, потому что она предоставляет дополнительные возможности
+
+### Использование UUID для уникальных имен файлов
+
+В приведенном вами черновике упоминается, что при загрузке файлов с одинаковыми именами предыдущие версии файлов могут быть перезаписаны. Чтобы избежать этого, можно использовать UUID (Universally Unique Identifier) для создания уникальных имен файлов.
+
+Для реализации этой идеи вам потребуется изменить функцию `handle_uploaded_file` так, чтобы она использовала UUID для генерации уникального имени файла перед сохранением. Вот как это можно сделать:
+
+```python
+# views.py
+import os
+import uuid
+from django.conf import settings
+from .forms import UploadFileForm
+
+def handle_uploaded_file(f):
+    # Создаем путь к директории 'uploads', если он не существует
+    os.makedirs(os.path.join(settings.MEDIA_ROOT, 'uploads'), exist_ok=True)
+    # Генерируем уникальное имя файла с сохранением оригинального расширения
+    ext = f.name.split('.')[-1]
+    filename = f"{uuid.uuid4()}.{ext}"
+    with open(os.path.join(settings.MEDIA_ROOT, 'uploads', filename), 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+```
+
+Этот код создает уникальное имя файла на основе UUID и сохраняет его в папке `uploads`. Он избегает перезаписи файлов с одинаковыми именами, обеспечивая уникальность каждого сохраненного файла.
+
+### Обобщение
+
+Для работы с файлами в Django крайне важно обеспечить правильную обработку загрузки и сохранения файлов на сервере, особенно при работе с большими файлами и предотвращении коллизий имен. Использование метода `chunks()` вместо `read()` помогает управлять памятью эффективно, а применение UUID для имен файлов предотвращает возможные ошибки перезаписи.
+
+## `FileField`
+
+Для работы с загрузкой файлов в Django, особенно когда файлы связаны с конкретными записями в базе данных, рекомендуется использовать модели. Использование моделей позволяет легко сохранять информацию о файле, такую как его имя, путь, связанные данные, а также контекст, в котором файл был загружен. Это облегчает управление загруженными файлами, их обновление, удаление и прочее.
+
+### Создание модели для загрузки файлов
+
+1. **Определение модели для загрузки файлов**
+
+   Создадим модель `UploadFile`, которая будет использоваться для сохранения файлов в определенный каталог.
+
+   ```python
+   # models.py
+   from django.db import models
+
+   class UploadFile(models.Model):
+       file = models.FileField(upload_to="uploaded_files")
+   ```
+
+   - `FileField` с аргументом `upload_to="uploaded_files"` указывает, что все файлы, загруженные через эту модель, будут сохраняться в подкаталог `uploaded_files` каталога, указанного в настройке `MEDIA_ROOT`.
+
+### Миграции
+
+2. **Создание и применение миграций**
+
+   После добавления новой модели или изменения существующих моделей необходимо создать миграции и применить их, чтобы изменения отразились в базе данных.
+
+   ```bash
+   python manage.py makemigrations
+   python manage.py migrate
+   ```
+
+   Эти команды создадут и применят миграции, соответственно. В базе данных появится новая таблица для модели `UploadFile`, где будет храниться информация о каждом загруженном файле, включая путь к файлу.
+
+### Загрузка файлов через модель
+
+3. **Использование модели для загрузки файлов**
+
+   Вместо собственной функции для обработки файлов, как было показано ранее, теперь загрузка файлов будет происходить через создание экземпляра модели `UploadFile` и сохранение его в базе данных.
+
+   ```python
+   # views.py
+   from django.shortcuts import render, redirect
+   from .forms import UploadFileForm
+   from .models import UploadFile
+
+   def file_upload_view(request):
+       if request.method == 'POST':
+           form = UploadFileForm(request.POST, request.FILES)
+           if form.is_valid():
+               # Создаем новый экземпляр модели с загруженным файлом
+               new_file = UploadFile(file=request.FILES['file'])
+               new_file.save()  # Сохраняем модель, что приведет к сохранению файла
+               return redirect('success_url')  # Перенаправление после успешной загрузки
+       else:
+           form = UploadFileForm()
+       return render(request, 'upload_file_form.html', {'form': form})
+   ```
+
+### Настройка MEDIA_ROOT
+
+4. **Настройка каталога для медиафайлов**
+
+   Установите `MEDIA_ROOT` в файле `settings.py`, чтобы указать местоположение корневой папки медиафайлов:
+
+   ```python
+   # settings.py
+   from pathlib import Path
+   BASE_DIR = Path(__file__).resolve().parent.parent
+   MEDIA_ROOT = BASE_DIR / 'media'
+   MEDIA_URL = '/media/'
+   ```
+
+   Это указание гарантирует, что все медиафайлы, включая загружаемые файлы, будут храниться в папке `media` в корневой директории проекта.
+
+### Объяснение
+
+Использование моделей для загрузки файлов в Django облегчает управление файлами, так как Django автоматически заботится о создании уникальных путей для каждого файла, предотвращая конфликты имен. Кроме того, модели позволяют св
+
+язывать файлы с другими данными в базе, например, с пользовательскими записями или событиями, что упрощает дальнейшую обработку и анализ данных.
 
 
-https://docs.djangoproject.com/en/4.2/topics/http/file-uploads/
-создаем максимально простую форму с методом пост в шаблоне джанго с вставкой этого в блок content и расширением шаблона base
-enctype multipart form-date - если это не прописать загрузка файлов на сервер не подйет
-что он означает и почему так?
-csrf token
-поле input type file file_upload
-отправить
-это минимальная форма для отправки
+## `FormView`
 
 
+Переписать функциональное представление для загрузки файлов в Django на классовое (class-based view) может улучшить структуру кода и сделать его более модульным и легко расширяемым. Вот как могло бы выглядеть представление на основе класса для загрузки файлов, используя модель `UploadFile`, которую мы определили ранее:
 
+### Классовое представление для загрузки файлов
 
-Максимально подробно опиши эту инструкцию так, чтобы поней можно было написать нужный код Джанго 4.2. Сделай все нужные блоки кода. В них можешь в важных местах вставить комментарии на русском язке. Потом описать что это.
-есть 2 варианта read() и chunks() - рекомендуемый вариант
-делаем функцию обработки загрузки файла
-def handle_uploaded_file(f)
-f - что это?
-with open 'uploads/{f.name}', "wb+" as destination
-for chunk in f.chunks()
-destination.write(chunk)
-создаем директорию (иначе будет ошибка)
+1. **Создание классового представления**
 
-делаем функцию обработчик
-def about(request)
-если метод запроса пост
-если поля валидны
-обработчик загрузки (form.cleaned_data[file]
-тестируем форму - файл появился
+   Используем `FormView` из Django, который предназначен для работы с формами:
 
-Типы полей filefild image fild - что это такое и чем отличаются?
-для последнего нужен Pillow, почему и зачем?
+   ```python
+   # views.py
+   from django.urls import reverse_lazy
+   from django.views.generic.edit import FormView
+   from .forms import UploadFileForm
+   from .models import UploadFile
 
-делаем класс не формы не привязанной к модели
-UploadFileForm(forms.Form)
-file.FileFielsd lable Файл
-Теперь в функции представления можно добавить форму
-она будет в else - так как её надо дать при гет запросе
-при пост запросе будет form - UploadedFileForm()
+   class FileUploadView(FormView):
+       template_name = 'upload_file_form.html'  # путь к шаблону
+       form_class = UploadFileForm
+       success_url = reverse_lazy('success_url')  # URL для перенаправления после успешной загрузки файла
 
-Если мы загружаем файлы с одинаковыми именами, то мы затираем прошлые
-мы можешь использовать uuid - для генерации имен
-Но в будущем это можно сделать через модели
+       def form_valid(self, form):
+           # Обработка загруженного файла
+           file = form.cleaned_data['file']
+           UploadFile.objects.create(file=file)  # Создаем и сохраняем новый экземпляр модели с файлом
+           return super().form_valid(form)  # Вызываем базовую реализацию для перенаправления на success_url
+   ```
 
+   В этом классе:
+   - `template_name` указывает Django, какой шаблон использовать для отображения страницы с формой.
+   - `form_class` сообщает Django, какую форму использовать для получения и валидации данных.
+   - `success_url` определяет, куда следует перенаправить пользователя после успешной загрузки файла.
+   - Метод `form_valid` вызывается, когда форма успешно валидирована. В этом методе происходит создание и сохранение нового экземпляра модели `UploadFile`.
 
-49.
-Почему мы обычно используем для загрузки файлов модели связанные с таблицами?
-Хранить имена, связанные данные и как и зачем этот файл к нам попал
+### Интеграция в URLconf
 
-создаем модель
-class UploadFiles(Models.Model)
-file = model.FileField(upload_to="upload_file")  - каталог куда будет загружатся файл. Появится автоматом
-нужны миграции делаем
-что появится в базе?
-мы сможем загрузить одинаковый файл (будут разные имена)
+2. **Добавление маршрута в URLconf**
 
-будем загружать картинки через это
-теперь уберем собственный обработчик файл
-fp = UploadFiles(file=form.cleaned_data['file'])
-fp.save()
+   Теперь необходимо добавить маршрут для этого представления в URL конфигурацию приложения:
 
-Мы можем сделать единую папку для медиа в настройках
-media_root = base_dir / media
+   ```python
+   # urls.py
+   from django.urls import path
+   from .views import FileUploadView
 
-50
-Отображение изображений при просмотре постов
-Что из себя представляет imagefield? в моделях
-это ссылка на класс у него есть много атрибутов
-расскажи про них
+   urlpatterns = [
+       path('upload/', FileUploadView.as_view(), name='file_upload'),
+   ]
+   ```
 
-нас интересует url метод
-и мы можем прописать это в шаблоне
-мы можем поместить это с условием if и сделать BS5 класс fluid Image
-как сделать так, чтобы сервер смог связать картинку из media root
-media url константа в настройках (префикс)
-urls.py - маршрут для медиа
-if settings.Debug urlpatterns += static(settings.media_url document_root settigns.Media_ROOT)
+### Описание
 
-Что делать когда я переведу сервер в режим боевой? (сервер уже будет иметь настройки для этой связки)
-надо ли их задавать автоматом?
+Классовые представления в Django позволяют структурировать код более чисто и сфокусированно, особенно при работе с формами. `FormView` автоматически обрабатывает логику отображения формы на GET запрос и её сохранения на POST запрос, что уменьшает количество шаблонного кода. Использование классовых представлений также упрощает расширение функциональности, например, добавление дополнительных методов обработки данных или кастомной логики перед сохранением формы.
 
-Картинки в админ панели
-4-48
+## `ImageField`
+
+Чтобы организовать отображение изображений в Django 4.2 при просмотре постов и работать с `ImageField` в моделях, следуйте подробной инструкции ниже. В данной инструкции также рассмотрены настройки для работы с медиафайлами в разработке и продакшене.
+
+### Что такое `ImageField`?
+
+`ImageField` в Django — это специальное поле модели для хранения изображений. Оно наследует все атрибуты `FileField` и добавляет несколько специфичных для работы с изображениями. Для работы `ImageField` требуется библиотека Pillow, так как она поддерживает проверку и обработку загружаемых изображений.
+
+Основные атрибуты `ImageField`:
+- `upload_to`: строка или функция, указывающая путь, куда сохранять файл в `MEDIA_ROOT`.
+- `height_field` и `width_field`: поля модели, в которые будут сохранены высота и ширина изображения соответственно.
+- `max_length`: максимальная длина пути файла (по умолчанию 100 символов).
+
+### Как использовать `ImageField` в модели?
+
+Пример модели с `ImageField`:
+
+```python
+# models.py
+from django.db import models
+
+class Post(models.Model):
+    title = models.CharField(max_length=200)
+    image = models.ImageField(upload_to='posts_images/')
+```
+
+### Как отображать изображения в шаблонах?
+
+Для отображения изображений, загруженных через `ImageField`, используем атрибут `url`, который предоставляет URL к файлу изображения.
+
+Пример шаблона с использованием Bootstrap 5 для отображения изображения:
+
+```html
+<!-- post_detail.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="width: 18rem;">
+  {% if post.image %}
+    <img src="{{ post.image.url }}" class="card-img-top img-fluid" alt="...">
+  {% endif %}
+  <div class="card-body">
+    <h5 class="card-title">{{ post.title }}</h5>
+  </div>
+</div>
+{% endblock %}
+```
+
+### Конфигурация статических и медиа файлов в настройках Django
+
+1. **Настройка в `settings.py`**
+
+```python
+# settings.py
+from pathlib import Path
+import os
+
+BASE_DIR = Path(__file__).resolve().parent.parent
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+```
+
+2. **Настройка URL-маршрутов для разработки**
+
+В файле `urls.py` вашего проекта добавьте маршруты для обслуживания медиафайлов в режиме разработки:
+
+```python
+# urls.py
+from django.conf import settings
+from django.conf.urls.static import static
+from django.urls import path, include
+
+urlpatterns = [
+    # Ваши URL-конфигурации
+]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+Этот код добавляет URL-маршруты для обслуживания файлов напрямую из `MEDIA_ROOT` в режиме разработки.
+
+## Изображения в админке.
+
+Чтобы настроить отображение миниатюр изображений в общем списке объектов и полных изображений в детальном просмотре в административной панели Django, вы можете использовать следующие настройки. Подробное руководство поможет вам шаг за шагом реализовать эту функциональность.
+
+### Шаг 1: Модификация модели
+
+Для начала убедитесь, что в вашей модели используется `ImageField` для хранения изображений. Пример модели:
+
+```python
+# models.py
+from django.db import models
+
+class MyModel(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='images/')
+```
+
+### Шаг 2: Создание кастомного админ-класса
+
+Чтобы настроить отображение изображений в админке, вам необходимо создать кастомный класс в `admin.py`, который будет наследоваться от `ModelAdmin` и добавлять методы для отображения миниатюр и полных изображений.
+
+```python
+# admin.py
+from django.contrib import admin
+from django.utils.html import format_html
+from .models import MyModel
+
+class MyModelAdmin(admin.ModelAdmin):
+    list_display = ('title', 'image_thumbnail')
+    readonly_fields = ('image_display',)
+
+    def image_thumbnail(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width: 50px; height:auto;">', obj.image.url)
+        return "-"
+    image_thumbnail.short_description = 'Миниатюра'
+
+    def image_display(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="width: 800px; height:auto;">', obj.image.url)
+        return "Нет изображения"
+    image_display.short_description = 'Полное изображение'
+
+admin.site.register(MyModel, MyModelAdmin)
+```
+
+### Описание методов
+
+- **image_thumbnail**: Этот метод возвращает HTML для миниатюры изображения. Используется в списке объектов для предоставления визуального представления загруженных изображений.
+- **image_display**: Этот метод предназначен для детального просмотра объекта и возвращает HTML с полноразмерным изображением.
+
+### Шаг 3: Регистрация модели в админ-панели
+
+Как видно из кода выше, модель `MyModel` регистрируется с использованием кастомного админ-класса `MyModelAdmin`, который управляет отображением миниатюр и полных изображений в админ-панели.
+
+### Шаг 4: Настройка статических и медиа файлов
+
+Убедитесь, что ваша конфигурация `MEDIA_ROOT` и `MEDIA_URL` в `settings.py` правильно настроена для обслуживания медиафайлов:
+
+```python
+# settings.py
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+```
+
+Также не забудьте настроить URLconf для обслуживания медиафайлов в режиме разработки, как описано в предыдущих ответах.
+
+### Резюме
+
+С помощью вышеуказанных настроек и методов, вы сможете настроить административную панель Django для отображения миниатюр в списке объектов и полных изображений в детальном просмотре. Это улучшит визуальное представление данных и упростит управление содержимым, связанным с изображениями.
+
 # Классы Django
 
 ## Class-based views
@@ -11962,7 +12336,7 @@ class Card(models.Model):
     favorites = models.IntegerField(default=0, db_column='Favorites')
     check_status = models.BooleanField(choices=Status.choices, default=Status.UNCHECKED, db_column='CheckStatus')
     tags = models.ManyToManyField('Tag', related_name='cards', through='CardTags')
-    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, related_name='cards', null=True, default=None, verbose_name=_('Автор'))
+    author = models.ForeignKey(get_user_model(), on_delete=models.SET_NULL, related_name='cards', null=True, default=None, verbose_name=_('Автор'))
 
     class Meta:
         db_table = 'Cards'
@@ -12447,4 +12821,380 @@ class RegisterUser(CreateView):
 
 Использование `CreateView` для регистрации пользователей в Django — это эффективный и простой способ создать стандартизированный и безопасный процесс регистрации. Это предоставляет разработчикам мощные инструменты для контроля над процессом создания пользователей, позволяя легко настраивать поведение и внешний вид формы регистрации.
 
+66
+Повествование без кода
+Авторизация по емейл и паролю
+У нас в форме есть уже clean_email который проверят пароль на уникальность
+Благодаря этой проверки пользователи будут с уникальными емейлами
+По умолчанию джанго использует логин и пароль
+Что такое ModelBackend и BaseBackend
+Где их найти
+методы authenticate (по юзернейм и паролю)
+Мы можем прописать свой бекенд аутонтификацию по емейлу
 
+создаем в users файл authentication
+импортуриуем BaseBackend
+определим свой EmailAuthBackend(BaseBackend)
+Скопируем метод authenticate целиком
+self, request, username=none, password=none kwargs
+Вместо юзернейм сделаем email
+user_model = get_user_model
+try: Пробуем получить пользователя через равенство email=username
+if user.check_password(password)
+если проверка проходит - возвращаем user
+иначе none
+метод get_user self user_id
+user_model = get_user_model
+try: return user_model.objects.get(pk=user_id)
+except user_model.DoesNotExitst - none
+except user_model.DoesNotExist, user_model.MultipleObjectsReturned - вернуть none
+пропишим в настройках колекцию authntication_backends стандартный бекенд, и наш users.....
+Детальные пояснения
+
+Детальные пояснения
+Мы теперь можем логинится и по юзернейму и по паролю
+Почему так?
+
+Профиль пользователя
+users/profile.html
+форма методом пост
+цикл шаблона с отрисовкой формы
+кнопка сохранить
+BS5 стиль
+
+Класс формы 
+ProfileUserForm(forms.ModelForm)
+username forms.CharField disabpled=True lable Логин widhet formTextInput - классы BS5
+email forms.CharField disabpled=True lable E-mail widhet formTextInput - классы BS5
+class meta
+model = getusermodel
+fields username email first_name, last_name
+lable
+widjet
+
+ProfileUser(LoginRequiredMixin, UpdateView)
+model = get_user_model()
+form_class = ProfileUserForm
+tamplate_name = users/profile.html
+extra_context = title Профиль пользователя
+def get_success url
+return reverse lazy users:profile
+def get_object(self queryset=None)
+return self.request.user
+Пропишем маршрут в users urls.py profile/ views.ProfileUser.as_view() name profiкак туда попадет в request user?
+Добавим url users:profile в шаблон в имя пользователя, чтобы можно было попасть в профиль
+
+Как это работает? Детально.
+
+Без кода
+Что это
+как работает?
+Какой он испоьлзует класс формы, какой стандартный машрут по умолчанию, шалон, заголово
+PasswordChangeView
+PasswordChangeDoneView
+
+Мы можем просто импортировать PasswordChangeView PasswordChangeDoneView в урлы приложения users и запустить по адресу password_change name=password_change 
+PasswordChangeDoneView password-change/done/ password_change_done
+Т.е. мы используем стандартный функционал по полной
+Добавим ссылку для изменения пароля users:password_change
+
+Сделаем собственный шаблон для смены формы
+users/passwords_change_form.html
+форма отрисовывается в цикле шаблона
+стили BS5
+кнопка btn dark
+
+Класс для отображания этой формы
+UserPasswordsChangeForm(PasswordChangeForm)
+Какие атрибуты нам надо будет переделать?
+	старый пароль, новый пароль подтверждение нового пароля
+
+
+в users/views
+UserPasswordChange(PasswordChangeView)
+Так же атрибуты
+form_class = UserPasswordChangeForm
+success_url reverse_lazy users:password_change_done
+template_name = "users/passowd_chane_form.html"
+Подключим класс к маршруту
+создадим новый шаблон в users/pasword_change_done.thml
+Где это можно указать? в Urls а можно ли в классе?
+
+
+Модифицируем шаблон профиля
+Делаем BS5 вкладки Scrollspy
+Разделяем информацию о профиле
+Сменить пароль
+А так же выводим все карточки этого пользователя
+
+
+68 Так как Сергей устал, и объяснял быстро и путанно. Экспромпт по видео 68.
+
+Для восстановления пароля в Django проекте нам понадобятся следующие компоненты:
+
+1. **Вьюшки (Views)**: Django предоставляет классы встроенных вьюшек для работы с восстановлением пароля. Они включают:
+    - `PasswordResetView`: Отправляет письмо для сброса пароля.
+    - `PasswordResetDoneView`: Страница, которая отображается после отправки электронного письма для сброса пароля.
+    - `PasswordResetConfirmView`: Позволяет пользователю ввести новый пароль.
+    - `PasswordResetCompleteView`: Страница, отображаемая после успешного сброса пароля.
+
+2. **Шаблоны (Templates)**: Нам нужны следующие шаблоны HTML для отображения вышеуказанных вьюшек:
+    - `password_reset_form.html`: Форма для ввода электронной почты, чтобы запросить сброс пароля.
+    - `password_reset_done.html`: Страница, подтверждающая, что инструкции по сбросу пароля были отправлены на электронную почту.
+    - `password_reset_confirm.html`: Форма для ввода нового пароля.
+    - `password_reset_complete.html`: Страница, подтверждающая успешный сброс пароля.
+    - `password_reset_email.html`: Шаблон письма, которое будет отправлено для сброса пароля.
+
+3. **URL маршруты (URL patterns)**: Должны быть настроены в файле `urls.py` для доступа к вышеуказанным вьюшкам. Например:
+    ```python
+    path('password-reset/', 
+         auth_views.PasswordResetView.as_view(
+             template_name='users/password_reset_form.html',
+             email_template_name='users/password_reset_email.html',
+             success_url=reverse_lazy('password_reset_done')
+         ), 
+         name='password_reset'),
+
+    path('password-reset/done/',
+         auth_views.PasswordResetDoneView.as_view(
+             template_name='users/password_reset_done.html'
+         ),
+         name='password_reset_done'),
+
+    path('reset/<uidb64>/<token>/',
+         auth_views.PasswordResetConfirmView.as_view(
+             template_name='users/password_reset_confirm.html'
+         ),
+         name='password_reset_confirm'),
+
+    path('reset/done/',
+         auth_views.PasswordResetCompleteView.as_view(
+             template_name='users/password_reset_complete.html'
+         ),
+         name='password_reset_complete'),
+    ```
+
+4. **Настройка сервера электронной почты**: Вы можете использовать как настроенный SMTP сервер, так и тестовый сервер Django, который выводит электронные письма в консоль (`EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'`).
+
+5. **Тестирование отправки писем**: Используйте функцию `send_mail` из Django shell для тестирования отправки писем.
+
+Общий алгоритм действий следующий:
+- Создайте шаблоны HTML для каждого шага процесса сброса пароля и сохраните их в каталоге `users/templates/users/`.
+- Настройте маршруты в файле `urls.py`, используя Django встроенные классы вьюшек и укажите имена шаблонов и маршрутов.
+- Проверьте, что ваш SMTP сервер настроен и работает, или используйте тестовый сервер Django для вывода писем в консоль.
+- Добавьте ссылку на страницу сброса пароля в вашу форму логина (например, "Забыли пароль?").
+- Убедитесь, что ваши шаблоны электронной почты (`password_reset_email.html`) корректно настроены для отправки писем с инструкциями по сбросу пароля.
+
+Это основные шаги для настройки функционала восстановления пароля в Django-проекте.
+
+А теперь ПРОМПТЫ 68
+
+Максимально подробно опиши эту инструкцию так, чтобы по ней можно было написать нужный код Джанго 4.2. Сделай все нужные блоки кода. В них можешь в важных местах вставить комментарии на русском языке. Потом описать что это.
+
+Опиши ТОЛЬКО ТО, что есть в моём черновике.
+Если там нет представлений, не пиши их. Если там нет классов форм, валидаторов и прочего не пиши это. Только то, что есть в черновике.
+
+Всегда старайся использовать Bootstrap5, работаешь ли ты с шаблонами, или с кодом форм. Стили dark 
+
+
+---
+
+
+Восстановление пароля 
+По ссылке users:passwords-reset
+Переходим на форму где можно ввести емейл для сброса, по вводу емейла
+По клику на выслать переход на password-reser/done/
+Письмо высылается на емейл пользователя
+Пользователь открывает письмо и переходит по одноразовой ссылке
+В результате попадает в форму сброса пароля
+И попадает на password-reset/complete/ - пароль изменен
+
+Обычно почтовый сервер разворачивают вместе с Джанго сервером, хотя можно использовать и Яндекс или Гугл сервис
+Мы можем использовать тестовый сервер почты
+И отправлять емейлы в консоль
+параметр EMAIL_BACKEND = ... console.EmailBackend
+Мы можем протестировать отправку через Shell
+функция send_mail
+импортируем, выполняем тестовую отправку в консоли
+
+69
+PasswordResetView
+PasswordResetDoneView
+Можно посомтреть в документации
+
+
+users/templates/users/password_reset_form.html
+расширяем базовый шаблон
+заголовок восстановление пароля
+отрисовка формы в цикле
+Кнопка BS5 dark сбросить пароль
+
+Каталог Lib django contrib registration там есть шаблон password_reset_done.html
+Мы у себя создадим шаблон с таким же названием, расширяем наш базовый шаблон
+load i18n оставляем
+Блок контента и информация о том что на емейл была сброшена информация о воостановлении пароля
+
+Пропишем маршруты
+PasswordResetView - импортируем - имя шаблона наше users/templates/users/password_reset_form.html name = password-reset
+Следующий маршрут импортируем PasswordResetDoneView - уже наш password_reset_done.html name=password_reset_done
+Расскажи, что это названия маршрутов из документации
+
+Теперь мы можем добавить ссылку на восстановление пароля в форму логина "Забыли пароль?" (BS5 стиль!)
+Нам нужен так же маршрут password_reset_confirm
+users/templates/users/password_reset_confirm.html
+А так же еще один шаблон про изменение пароля  users/templates/users/password_reset_complete.html
+Но нам нужен еще один шаблон. passwords_reset_email.html копируем его и даем там ссылку через неймспейсы users:password_reset_confirm
+
+users/urls
+Новые маршруты 
+PasswordResetDoneView users/templates/users/password_reset_confirm.html name password_reset_confirm
+PasswordResetCompleteView users/templates/users/password_reset_complete.html name  password_reset_complete
+passwords_reset  PasswordResetView
+
+
+70 Настройка SMTP сервера Яндекс
+входим в почтовый ящик
+Переходим в почтовый ящик - настройки - все настройки
+Почтовые программы - разрешить доступ к почтовому ящику через почтовые клиенты - везде проставить галочки (первые две касающиеся IMAP)
+Управление аккаунтом - безопастность - доступы и пароли - пароли приложенией - почта - вводим пароль, генерируется пароль для приложения
+
+Его можно сохранить пока в настройках EMAIL_HOST_PASSWORD
+Комментрируем старый EMAIL BACKEND (с выводом в консоль)
+И определяем smtp Email Backend
+
+Переходим в документацию яндекса
+Настройка программы для исходящей почты
+EMAIL_HOST, EMAIL_PORT, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD EMAIL_USE_SSL
+DEFAULT_FROM_EMAIL, SERVER_EMAIL, EMAIL_ADMIN
+
+71 Расширение модели User. Класс AbstractUser
+Какие поля содержит модель User?
+А что если мы захотим хранить фото юзера, или иные вещи?
+Какие пути есть?
+Создание модели Profile со связью один-к-одному с User
+Создание новой модели User на базе AbstractUser
+
+Какие еще преимущества и недостатки есть в обоих подходах?
+При прочих равных, чему стоит отдать предпочтение?
+
+В приложении users создадим модель User(AbstractUser)
+photo imageField upload_to=users/%Y/%m/%d/ blank, null True, verbose name Фотография
+date_birth = models.DateTimeField(blank=True, null=True, verbose name Дата рождения
+вот так просто мы можем расширить модель
+Так же, эту новую модель надо подключить к админке
+users/admin.py регистрация нашей модели
+Так как мы везде используем get_user_model - мы всегда будем получать текущую модель пользователя!
+
+Если мы попытаемся сделать миграции, то получим ошибки
+чтобы этого не было. нам надо задать константу в настройках AUTH_USER_MODEL = 'User'  (а по умолчанию была модель из auth)
+Теперь можно будет сделать миграции
+Однаго, у нас уже есть таблицы пользователей в базе
+Самый простой способ будет удалить миграции
+Удалить служебные таблицы sqlite базы Джанго
+Накатить служебные таблицы, создать файл миграций, сделать фейковые миграции cards приложения (чтобы не потерять данные)
+
+
+users/forms.py
+ProfileUserForm добавим date_birth и photo
+this_year = datetime.date.today().year
+SelectDateWidget(year=type(range(this_year - 100, this_year-5)))
+users/templates/users/profile.html надо внести правки
+enctype
+if есть фото, отображаем фото в флюид имг BS5
+иначе BS иконку пользователя 
+
+
+72 Разрешения и группы
+Что это такое?
+Как посмотреть стандартные разрешения в админке? Что они будут означать?
+Мы можем добавить права пользователю
+Но на вьюшке добавления карточек это не будет работать
+Нужен PremissionRequiredMixin
+
+PremissionRequiredMixin - что это?
+атрибут premission_requred = имя приложения.разрешение _ имя таблицы
+
+
+
+
+
+
+## Как настроить обслуживание медиафайлов в продакшене?
+
+Настройка обслуживания медиафайлов в продакшене для Django-проектов обычно включает конфигурацию веб-сервера, такого как Nginx или Apache, чтобы эффективно и безопасно обрабатывать статические и медиафайлы. Django не предназначен для обслуживания медиафайлов в продакшене из-за ограничений производительности и безопасности. Вот общие шаги для настройки Nginx для этой задачи:
+
+### Шаг 1: Установка Nginx
+
+Убедитесь, что Nginx установлен на вашем сервере. Если нет, вы можете установить его с помощью пакетного менеджера вашей системы. Например, на Ubuntu это можно сделать так:
+
+```bash
+sudo apt update
+sudo apt install nginx
+```
+
+### Шаг 2: Конфигурация Nginx для обслуживания медиафайлов
+
+1. **Откройте конфигурационный файл Nginx для вашего сайта.** Этот файл обычно находится в `/etc/nginx/sites-available/` и может быть связан с `/etc/nginx/sites-enabled/`. Если вы используете конфигурацию по умолчанию, файл может называться `default`.
+
+2. **Добавьте следующий блок конфигурации внутри блока `server` для обслуживания медиафайлов:**
+
+   ```nginx
+   server {
+       ...
+
+       location /media/ {
+           alias /path/to/your/media_root/;
+           expires max;
+           add_header Cache-Control "public";
+       }
+
+       ...
+   }
+   ```
+
+   Замените `/path/to/your/media_root/` на путь к каталогу `MEDIA_ROOT` в вашем проекте Django. Этот `location` блок настраивает Nginx на обслуживание файлов непосредственно из указанного каталога `MEDIA_ROOT`, используя URL-префикс `/media/`, который должен совпадать с `MEDIA_URL` в настройках Django.
+
+3. **Убедитесь, что у веб-сервера есть права на чтение в каталоге `MEDIA_ROOT`.**
+
+### Шаг 3: Перезапуск Nginx
+
+После изменения конфигурации необходимо перезапустить Nginx, чтобы изменения вступили в силу:
+
+```bash
+sudo systemctl restart nginx
+```
+
+### Шаг 4: Проверка конфигурации
+
+После перезапуска Nginx проверьте, что медиафайлы корректно отображаются. Вы можете попытаться получить доступ к медиафайлу, используя его URL, чтобы убедиться, что файл отдаётся корректно.
+
+### Дополнительные рекомендации
+
+- **Настройка безопасности:** Убедитесь, что конфигурация Nginx защищена от распространенных уязвимостей, настроив ограничения доступа, SSL и другие параметры безопасности.
+- **Кеширование:** Параметры `expires` и `Cache-Control` в конфигурации Nginx помогают управлять кешированием статических файлов, что может значительно улучшить производительность приложения.
+- **Мониторинг и логирование:** Настройте мониторинг и логирование Nginx для отслеживания ошибок и анализа трафика.
+
+Эти шаги помогут вам настроить обслуживание медиафайлов на продакшен-сервере и обеспечить их корректное отображение и безопасную работу вашего веб-приложения.
+
+### Конечные шаги настройки
+
+Конечный шаг в настройке сервера включает тестирование и удостоверение, что все настроено правильно и работает как ожидается. После того как медиафайлы успешно обслуживаются через Nginx, важно проверить следующие аспекты:
+
+1. **Производительность сервера**: удостоверьтесь, что сервер отдаёт медиафайлы быстро и эффективно даже при большой нагрузке.
+2. **Безопасность**: проверьте, что конфигурация Nginx не позволяет доступ к чувствительным директориям и файлам. Также стоит настроить HTTPS, чтобы обеспечить защищённое соединение между клиентами и сервером.
+3. **Резервное копирование**: настройте регулярное резервное копирование медиафайлов, чтобы предотвратить потерю данных.
+4. **Обновления**: регулярно обновляйте Nginx и операционную систему сервера для устранения уязвимостей безопасности.
+
+### Процесс перехода на продакшен
+
+Когда вы готовы перевести ваше приложение в режим боевой эксплуатации, важно тщательно протестировать все аспекты его работы. Уделяйте особое внимание маршрутизации медиафайлов и их отображению, так как ошибки в этих настройках могут привести к неправильному отображению контента или замедлению работы сайта.
+
+### Часто задаваемые вопросы
+
+**Q: Нужно ли мне автоматически задавать настройки для обслуживания медиа в продакшене?**  
+A: Да, настройки должны быть сконфигурированы до запуска сайта в продакшене. Это включает конфигурацию Nginx для обслуживания медиафайлов, а также настройки безопасности и производительности.
+
+**Q: Что делать, если я обновлю сервер или изменю настройки?**  
+A: После любых изменений в конфигурации сервера или обновлений системы, важно повторно проверить все элементы конфигурации и убедиться, что медиафайлы все еще доступны и отображаются корректно.
+
+Следуя этим рекомендациям, вы можете эффективно настроить обслуживание медиафайлов для вашего Django-проекта и гарантировать его безопасную и эффективную работу в продакшене.
