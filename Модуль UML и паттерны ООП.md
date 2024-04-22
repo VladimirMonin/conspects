@@ -1,4 +1,4 @@
-## Программа курса "Объектно-ореинтированное программирование" Язык UML и паттерны проектирования
+t## Программа курса "Объектно-ореинтированное программирование" Язык UML и паттерны проектирования
 
 
 %%
@@ -4584,7 +4584,6 @@ participant "Клонированный объект" as Clone
 Client -> Prototype : клонировать()
 activate Prototype
 Prototype -> Clone : Создать копию
-activate Clone
 Prototype --> Client : Возвращение клонированного объекта
 deactivate Prototype
 deactivate Clone
@@ -4754,13 +4753,12 @@ endlegend
 Используя паттерн Абстрактная Фабрика, можно значительно увеличить модульность и масштабируемость программного обеспечения, а также обеспечить гибкость в выборе или изменении конкретных реализаций компонентов системы.
 
 Давай начнем с создания UML-диаграммы классов для паттерна "Абстрактная Фабрика" с примером создания инструментария для различных баз данных. После этого перейдем к диаграмме последовательности, чтобы иллюстрировать процесс создания объектов.
-
 #### UML-диаграмма классов
 
 ```plantuml
 @startuml
 
-scale 800 height
+scale 1800 height
 
 skinparam BackgroundColor #FFE4B5
 
@@ -5756,7 +5754,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1800 height
 skinparam BackgroundColor #FFE4B5
 skinparam Participant {
     BackgroundColor #LightYellow
@@ -5918,7 +5916,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1800 height
 skinparam BackgroundColor #FFE4B5
 
 interface PaymentGateway {
@@ -5986,7 +5984,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1800 height
 skinparam BackgroundColor #FFE4B5
 
 actor "Веб-клиент магазина" as Customer
@@ -6136,7 +6134,7 @@ skinparam class {
 
 title Защитный прокси
 
-class Document {
+abstract Document {
     {abstract} +open()
     {abstract} +read()
 }
@@ -6166,7 +6164,7 @@ note bottom of ProtectedDocumentProxy : Прокси контролирует\n�
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1800 height
 skinparam BackgroundColor #FFE4B5
 skinparam Participant {
     BackgroundColor #LightYellow
@@ -6311,7 +6309,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam class {
     BackgroundColor #LightYellow
@@ -6363,7 +6361,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam Participant {
     BackgroundColor #LightYellow
@@ -6651,7 +6649,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam class {
     BackgroundColor #LightYellow
@@ -6704,7 +6702,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam Participant {
     BackgroundColor #LightYellow
@@ -6825,7 +6823,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam class {
     BackgroundColor #LightYellow
@@ -7050,7 +7048,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam class {
     BackgroundColor #LightYellow
@@ -7110,7 +7108,7 @@ endlegend
 
 ```plantuml
 @startuml
-scale 800 height
+scale 1200 height
 skinparam BackgroundColor #FFE4B5
 skinparam state {
     BackgroundColor #LightYellow
