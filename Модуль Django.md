@@ -11793,6 +11793,38 @@ endlegend
    - `{% csrf_token %}` добавляет в форму токен CSRF для предотвращения атак CSRF.
    - `{{ form.as_p }}` отображает поля формы, обернутые в параграфы `<p>`, что облегчает стилизацию.
 
+
+Или альтернативная версия на BS5
+
+```html
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    {% comment %} Полоса BS5. На больших экранах 6 кол. на маленьких 12 {% endcomment %}
+    <div class="row">
+        <div class="col-12 col-md-6 offset-md-3">
+            <h2>Вход в систему</h2>
+            <form method="post">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <input type="hidden" name="next" value="{{ request.GET.next }}">
+                <button type="submit" class="btn btn-dark">Войти</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```
+Bootstrap 5 (BS5) - это популярный CSS-фреймворк, который используется для создания адаптивных и мобильно-ориентированных веб-сайтов. В этом коде используются классы Bootstrap для создания адаптивной сетки.
+
+- `container`: Этот класс создает контейнер, который центрирует содержимое страницы и добавляет отступы по краям.
+- `row`: Этот класс используется для создания горизонтальной строки в сетке. Он автоматически корректирует отступы и поля для вложенных столбцов.
+- `col-12 col-md-6 offset-md-3`: Эти классы используются для определения ширины столбца и его положения в сетке.
+- `col-12`: Это означает, что столбец будет занимать все 12 колонок сетки на экранах меньше среднего размера (менее 768px).
+ `col-md-6`: Это означает, что столбец будет занимать 6 из 12 колонок сетки на экранах среднего размера (768px и больше). Это делает столбец шириной в половину экрана на больших экранах.
+- `offset-md-3`: Это означает, что столбец будет смещен на 3 колонки сетки на экранах среднего размера (768px и больше). Это центрирует столбец на больших экранах.
+
+
 ### Шаг 3: Обработка формы входа
 
 3. **Обработка формы в `views.py`**:
@@ -12419,10 +12451,13 @@ class LoginUser(LoginView):
     form_class = AuthenticationForm
     template_name = 'users/login.html'
     extra_context = {'title': 'Авторизация'}
+    redirect_field_name = 'next'
 
     def get_success_url(self):
-        # Перенаправление на главную страницу после успешного входа
-        return reverse_lazy('index')
+        if self.request.POST.get('next', '').strip():
+            return self.request.POST.get('next')
+        return reverse_lazy('catalog')
+
 ```
 
 ### Настройка `urls.py`
@@ -12503,6 +12538,12 @@ class CustomAuthenticationForm(AuthenticationForm):
         self.fields['username'].widget.attrs.update({'class': 'form-control'})
         self.fields['password'].widget.attrs.update({'class': 'form-control'})
         self.fields['remember_me'].widget.attrs.update({'class': 'form-check-input'})
+
+# Или более простой вариант, но с потенциальными проблемами (применяет ли она get_user_model)
+
+class CustomAuthenticationForm(AuthenticationForm):
+    username = forms.CharField(label='Имя пользователя', widget=forms.TextInput(attrs={'class': 'form-control'}))
+    password = forms.CharField(label='Пароль', widget=forms.PasswordInput(attrs={'class': 'form-control'}))
 ```
 
 ### Пояснения к коду
@@ -12723,7 +12764,7 @@ class Card(models.Model):
 Эти изменения помогают управлять связями в вашем приложении более гибко и обеспечивают сохранность данных при изменении состояния связанных объектов.
 
 ## Logout
-
+#todo - перекинуть это туда, где этому место
 Для реализации логаута в Django, вам необходимо добавить соответствующий URL и представление. Вот как это можно сделать:
 
 1. Добавьте URL для логаута в файле `urls.py` вашего приложения:
@@ -12735,6 +12776,11 @@ from django.contrib.auth.views import LogoutView
 urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
 ]
+
+#######
+from django.contrib.auth.views import LoginView, LogoutView
+class LogoutUser(LogoutView):
+    next_page = reverse_lazy('users:login')
 ```
 
 2. Теперь создайте ссылку на логаут в вашем шаблоне, например, в шапке сайта:
@@ -12925,7 +12971,6 @@ def register(request):
 <form method="post">
     {% csrf_token %}
     {{ form.as_p }}
-    <input type="hidden" name="next" value="{{ request.GET.next }}">
     <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
 </form>
 {% endblock %}
