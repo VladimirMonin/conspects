@@ -14837,44 +14837,110 @@ user.save()
 1. Если стороннему сайту необходимо продолжать доступ к ресурсам пользователя после истечения срока действия токена, он может использовать токен обновления для получения нового токена доступа без дополнительного взаимодействия с пользователем.
 2. Пользователь может в любой момент отозвать разрешения, предоставленные приложению, через настройки своего аккаунта в ВКонтакте.
 
-Эта модель OAuth 2.0 обеспечивает безопасное и контролируемое взаимодействие межд
-
-у пользователями, сторонними сайтами и сервисами, такими как ВКонтакте, позволяя управлять доступом к данным и обеспечивать их защиту.
+Эта модель OAuth 2.0 обеспечивает безопасное и контролируемое взаимодействие между пользователями, сторонними сайтами и сервисами, такими как ВКонтакте, позволяя управлять доступом к данным и обеспечивать их защиту.
 
 Для визуализации процесса аутентификации пользователя через OAuth 2.0 с использованием ВКонтакте на диаграмме последовательности, мы создадим диаграмму в PlantUML, отражающую основные шаги этого процесса. Вот полная диаграмма, описывающая взаимодействие между пользователем, сторонним сайтом (назовем его "ClientApp") и сервером ВКонтакте (назовем его "VKServer").
 
 ```plantuml
 @startuml
-scale 800 height
-skinparam BackgroundColor #FFE4B5
-skinparam ParticipantBackgroundColor #LightYellow
-skinparam ParticipantBorderColor #LightYellow
-skinparam ArrowColor #Brown
+scale 1800 height
+skinparam BackgroundColor #EEEBDC
+title Диаграмма последовательности "Авторизация через VK и OAuth2.0 в Django приложении"
 
-participant "User" as User
-participant "ClientApp" as Client
-participant "VKServer" as VK
+actor Пользователь #Goldenrod
+participant Браузер #Maroon
+participant Nginx #SaddleBrown
+participant Django #DarkGreen
+participant VK #Blue
+participant "База данных" #SaddleBrown
 
-User -> Client: Нажать "Войти через ВКонтакте"
-Client -> VK: Перенаправление запроса на авторизацию\n(client_id, redirect_uri, scope, response_type=code)
-note right of VK: Пользователь авторизуется и дает\nсогласие на доступ к ресурсам
-VK -> User: Перенаправление обратно к ClientApp\nс кодом авторизации (code)
-User -> Client: Передача кода авторизации
-Client -> VK: Запрос на обмен кода на токен доступа\n(client_id, client_secret, redirect_uri, code, grant_type)
-note left of VK: Проверка данных и выдача\nтокена доступа и токена обновления
-VK -> Client: Ответ с токеном доступа (access_token)\nи токеном обновления (refresh_token)
-Client -> VK: Запросы к API с использованием токена доступа
-note over VK: Выполнение запросов от имени пользователя\nпри наличии действующего токена
+== Легенда ==
+note right of Пользователь #Goldenrod
+  Пользователь: Человек, который инициирует процесс авторизации,
+  нажимая на кнопку "Войти через VK" и вводя свои учетные данные.
+end note
 
-legend
-    Эта диаграмма последовательности отражает процесс аутентификации пользователя через OAuth 2.0 с использованием ВКонтакте:
-    - Пользователь инициирует процесс, нажимая на "Войти через ВКонтакте" на стороннем сайте.
-    - Сторонний сайт перенаправляет пользователя на сервер ВКонтакте для авторизации и предоставления необходимых разрешений.
-    - После предоставления разрешений ВКонтакте перенаправляет пользователя обратно на сторонний сайт с кодом авторизации.
-    - Сторонний сайт обменивает полученный код на токен доступа.
-    - Сторонний сайт использует токен доступа для выполнения запросов к API ВКонтакте от имени пользователя.
-endlegend
+note right of Браузер #Maroon
+  Браузер: Веб-браузер, используемый пользователем для взаимодействия с приложением.
+end note
+
+note right of Nginx #SaddleBrown
+  Nginx: Веб-сервер, который обрабатывает запросы и перенаправляет их на Django приложение.
+end note
+
+note right of Django #DarkGreen
+  Django: Веб-приложение, которое управляет процессом авторизации и взаимодействует с VK и базой данных.
+end note
+
+note right of VK #Blue
+  VK: Сервер авторизации VK, который аутентифицирует пользователя и выдает токены доступа.
+end note
+
+note right of "База данных" #SaddleBrown
+  База данных: Хранит информацию о пользователях и их сессиях.
+end note
+
+== Инициация авторизации ==
+Пользователь -> Браузер : "Нажать кнопку 'Войти через VK'"
+activate Пользователь #Goldenrod
+activate Браузер #Maroon
+
+Браузер -> Nginx : "GET /auth/login/vk/"
+activate Nginx #SaddleBrown
+Nginx -> Django : "GET /auth/login/vk/"
+activate Django #DarkGreen
+
+Django -> VK : "Перенаправить на VK (GET /authorize)"
+deactivate Django
+deactivate Nginx
+activate VK #Blue
+
+Пользователь -> VK : "Ввести учетные данные VK"
+deactivate Пользователь
+VK -> Пользователь : "Запросить разрешение на доступ"
+activate Пользователь
+
+Пользователь -> VK : "Подтвердить доступ"
+deactivate Пользователь
+VK -> Браузер : "Перенаправить с кодом авторизации (GET /auth/callback/vk/?code=<authorization_code>)"
+deactivate VK
+activate Браузер
+
+== Обмен кода авторизации на токен доступа ==
+Браузер -> Nginx : "GET /auth/callback/vk/?code=<authorization_code>"
+activate Nginx #SaddleBrown
+Nginx -> Django : "GET /auth/callback/vk/?code=<authorization_code>"
+activate Django #DarkGreen
+
+Django -> VK : "POST /access_token (с кодом авторизации)"
+activate VK #Blue
+VK -> Django : "Ответ с токеном доступа (JSON)"
+deactivate VK
+
+== Получение данных пользователя ==
+Django -> VK : "GET /users.get (с токеном доступа)"
+activate VK #Blue
+VK -> Django : "Ответ с данными пользователя (JSON)"
+deactivate VK
+
+== Создание или обновление пользователя ==
+Django -> "База данных" : "Создать или обновить пользователя"
+deactivate Браузер
+activate "База данных" #SaddleBrown
+"База данных" -> Django : "Подтверждение"
+deactivate "База данных"
+
+== Авторизация пользователя ==
+Django -> Браузер : "Создание сессии и перенаправление на главную страницу"
+activate Браузер
+Браузер -> Пользователь : "Пользователь авторизован"
+deactivate Django
+deactivate Nginx
+deactivate Браузер
+deactivate Пользователь
+
 @enduml
+
 ```
 
 Эта диаграмма предоставляет четкое и последовательное представление о том, как пользователь проходит через процесс авторизации и аутентификации, используя OAuth 2.0 на примере ВКонтакте. Включая взаимодействия с сервером ВК, предоставление разрешений, получение и использование токенов доступа и обновления для доступа к ресурсам.
@@ -15278,10 +15344,17 @@ endlegend
 ![[2024-04-20_11-12-51.jpg]]
 
 ```shell
-python3 manage.py migrate && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'email@example.com', '12345')" | python3 manage.py shell && python3 manage.py loaddata cards_fixtures.json
+python3 manage.py migrate && echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'ad@ad.com', '12345')" | python3 manage.py shell && python3 manage.py loaddata dump.json
+```
+Аналогичная команада, только с миграциями и загрузкой 2х разных фикстур с разными названиями фикстур (без создания суперпользователя)
+Конечно! Вот команда, которая выполняет миграции и загружает две разные фикстуры без создания суперпользователя:
+
+```shell
+python3 manage.py migrate && python3 manage.py loaddata first_fixture.json && python3 manage.py loaddata second_fixture.json
 ```
 
-Каждая часть этой команды выполняет определенную задачу:
+Замените `first_fixture.json` и `second_fixture.json` на имена ваших файлов с фикстурами. Конечно! Вот команда, которая выполняет миграции и загружает две разные фикстуры без создания суперпользователя:
+
 
 1. `python3 manage.py migrate`:
    Эта команда применяет миграции к вашей базе данных, которые необходимы для создания или изменения структуры таблиц в соответствии с моделями Django. Это первый шаг, так как база данных должна быть полностью настроена перед тем, как вы сможете в ней что-то создать.
