@@ -28,7 +28,7 @@ VS Studio Code - как Linux. Надо с ним повозится.
 | 13  | Live Server                                  | Ritwick Dey        | Локальный сервер для разработки с функцией live reload.                                                                                                     | Незаменим для тестирования фронтенда.                       |
 | 14  | Markdown All in One                          | Yu Zhang           | Все необходимое для работы с Markdown, включая ярлыки и предпросмотр.                                                                                       | Упрощает работу с Markdown файлами.                         |
 | 15  | Markdown Preview Enhanced                    | Yiyi Wang          | Улучшенный предпросмотр Markdown файлов.                                                                                                                    | Дополнение к Markdown All in One для лучшего предпросмотра. |
-| 16  | Material Theme                               | Equinusocio        | Тема оформления VS Code.                                                                                                                                    | Один из самых популярных тем оформления.                    |
+| 16  | Dracula Official                             | draculatheme.com   | Тема оформления VS Code.                                                                                                                                    | Популярная тема оформления                                  |
 | 17  | Path Intellisense                            | Christian Kohler   | Автодополнение путей к файлам в VS Code.                                                                                                                    | Облегчает навигацию по проекту.                             |
 | 18  | PlantUML                                     | jebbs              | Поддержка языка PlantUML для создания диаграмм.                                                                                                             | Важно для визуализации архитектуры систем.                  |
 | 19  | Prettier - Code formatter                    | N/A                | Форматирование кода с использованием Prettier.                                                                                                              | Стандарт де-факто для форматирования во многих проектах.    |
@@ -46,7 +46,8 @@ VS Studio Code - как Linux. Надо с ним повозится.
 | 31  | Indent-Rainbow                               | oderwat            | Плагин который  позволяет визуализировать уровни отступов в коде с помощью цветовой индикации.                                                              |                                                             |
 | 32  | Thunder Client                               | Thunder Client<br> | Плагин который  позволяет производить тестирование API прямо из среды Visual Studio Code.                                                                   |                                                             |
 | 33  | Markdown Table Prettifier                    | Krisztian Daroczi  | Плагин который  позволяет форматировать таблицы в Markdown для облегчения их чтения и редактирования.                                                       |                                                             |
-|     |                                              |                    |                                                                                                                                                             |                                                             |
+| 34  | HTML CSS Support                             | ecmel              |                                                                                                                                                             |                                                             |
+| 35  | YAML                                         | Red Hat            |                                                                                                                                                             |                                                             |
 
 ### Настройки
 
@@ -74,7 +75,6 @@ VS Studio Code - как Linux. Надо с ним повозится.
 
 ```json
 {
-  "workbench.colorTheme": "Material Theme",
   "editor.mouseWheelZoom": true,
   "sqltools.useNodeRuntime": true,
 
@@ -85,11 +85,11 @@ VS Studio Code - как Linux. Надо с ним повозится.
   //terminal
   "terminal.integrated.cursorStyle": "line",
   "terminal.integrated.cursorBlinking": true,
-  "terminal.integrated.cursorWidth": 2,
+  "terminal.integrated.cursorWidth": 10,
   "terminal.integrated.enableFileLinks": "off",
-  "terminal.integrated.scrollback": 50,
   "terminal.integrated.defaultProfile.windows": "Command Prompt",
-
+  // Шрифт терминала размер
+  "terminal.integrated.fontSize": 20,
   //editor
   "editor.minimap.enabled": false,
   "editor.find.seedSearchStringFromSelection": "selection",
@@ -97,7 +97,7 @@ VS Studio Code - как Linux. Надо с ним повозится.
   "editor.autoClosingDelete": "never",
   "editor.autoClosingOvertype": "never",
   "editor.definitionLinkOpensInPeek": true,
-  "editor.hover.delay": 2000,
+  "editor.hover.delay": 5000,
   "editor.roundedSelection": false,
   "editor.scrollbar.horizontal": "visible",
   "editor.scrollbar.vertical": "visible",
@@ -144,8 +144,7 @@ VS Studio Code - как Linux. Надо с ним повозится.
 
   "python.linting.pylintArgs": [
     "--disable=missing-module-docstring,missing-class-docstring,missing-function-docstring"
-],
-
+  ],
 
   // Enable display of variable typing.
   "python.analysis.inlayHints.variableTypes": true,
@@ -176,17 +175,19 @@ VS Studio Code - как Linux. Надо с ним повозится.
       "depth": 3,
       "includeAllSymbols": true
     }
-
-    //like this:
-    // {
-    //     "name": "django",
-    //     "depth": 3,
-    //     "includeAllSymbols": true
-    // }
   ],
 
   "[python]": {
     "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[css]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
   },
 
   // for django:
@@ -236,9 +237,31 @@ VS Studio Code - как Linux. Надо с ним повозится.
   "workbench.editorAssociations": {
     "*.pickle": "default"
   },
-  "window.zoomLevel": 2,
- 
+  "diffEditor.maxComputationTime": 0,
+  "workbench.iconTheme": "material-icon-theme",
+  "gitlens.graph.minimap.additionalTypes": [
+    "localBranches",
+    "stashes",
+    "remoteBranches",
+    "tags"
+  ],
+  "gitlens.codeLens.enabled": false,
+  "editor.inlineSuggest.suppressSuggestions": true,
+  "cody.autocomplete.enabled": false,
+  "diffEditor.ignoreTrimWhitespace": false,
+  "[html]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "git.enableSmartCommit": true,
+  "github.copilot.editor.enableAutoCompletions": true,
+  "workbench.colorTheme": "Dracula",
+  "editor.formatOnSave": true,
+  "window.zoomLevel": 1
 }
+
 
 ```
 ## Меняем кодировку Терминала Windows
