@@ -3381,6 +3381,9 @@ ORM (Object-Relational Mapping) — это технология, которая 
 3. **Сложность обучения**:
    - Понимание и использование ORM может потребовать времени и усилий, особенно для новичков.
 
+4. **Абстракция от специфики СУБД**:
+   - И все что это за собой влечет, например необходимость работать с миграциями.
+
 ### SQLAlchemy
 
 SQLAlchemy — это популярная ORM для Python, которая предоставляет мощные инструменты для работы с базами данных. Она поддерживает множество СУБД и предоставляет гибкие возможности для создания и выполнения запросов.
@@ -3419,11 +3422,11 @@ Django поставляется с мощной встроенной ORM, кот
 >[!info]
 >### Основные моменты
 >- **ORM**: Технология для работы с базами данных, используя объектно-ориентированный подход.
-- **Преимущества**: Упрощение работы, абстракция от СУБД, повышение производительности разработки, интеграция с объектно-ориентированным кодом.
-- **Недостатки**: Потеря гибкости, производительность, сложность обучения.
-- **SQLAlchemy**: Популярная ORM для Python.
-- **Django ORM**: Встроенная ORM в Django, поддерживающая множество СУБД, обеспечивающая простоту использования и безопасность.
-- **Единый API**: Позволяет легко переключаться между разными СУБД без необходимости переписывать запросы.
+>- **Преимущества**: Упрощение работы, абстракция от СУБД, повышение производительности разработки, интеграция с объектно-ориентированным кодом.
+>- **Недостатки**: Потеря гибкости, производительность, сложность обучения.
+>- **SQLAlchemy**: Популярная ORM для Python.
+>- **Django ORM**: Встроенная ORM в Django, поддерживающая множество СУБД, обеспечивающая простоту использования и безопасность.
+>- **Единый API**: Позволяет легко переключаться между разными СУБД без необходимости переписывать запросы.
 
 Django ORM — это мощный инструмент, который делает работу с базами данных простой и удобной, обеспечивая высокую производительность разработки и безопасность. Спасибо за внимание!
 
@@ -3878,30 +3881,30 @@ class Migration(migrations.Migration):
 
 ## Сводная таблица характеристик полей
 
-| Тип поля            | Описание                                          | Основные параметры                                 |
-|---------------------|---------------------------------------------------|---------------------------------------------------|
-| CharField           | Строковое поле с ограниченной длиной              | max_length, blank, null, default, unique           |
-| TextField           | Поле для хранения больших текстовых данных        | blank, null, default                               |
-| IntegerField        | Поле для хранения целых чисел                     | blank, null, default, unique                       |
-| FloatField          | Поле для хранения чисел с плавающей точкой        | blank, null, default, unique                       |
-| DecimalField        | Поле для хранения десятичных чисел                | max_digits, decimal_places, blank, null, default   |
-| BooleanField        | Поле для хранения булевых значений (True/False)   | default                                            |
-| DateField           | Поле для хранения дат                            | blank, null, default, auto_now, auto_now_add       |
-| DateTimeField       | Поле для хранения дат и времени                   | blank, null, default, auto_now, auto_now_add       |
-| TimeField           | Поле для хранения времени                         | blank, null, default, auto_now, auto_now_add       |
-| EmailField          | Поле для хранения email адресов                   | max_length, blank, null, default, unique           |
-| URLField            | Поле для хранения URL                            | max_length, blank, null, default, unique           |
-| SlugField           | Поле для хранения slug (короткий метки)           | max_length, blank, null, default, unique           |
-| FileField           | Поле для загрузки файлов                          | upload_to, blank, null, default                    |
-| ImageField          | Поле для загрузки изображений                     | upload_to, blank, null, default                    |
-| ForeignKey          | Поле для связи "многие к одному"                  | to, on_delete, related_name, related_query_name, blank, null, default |
-| OneToOneField       | Поле для связи "один к одному"                    | to, on_delete, related_name, related_query_name, blank, null, default |
-| ManyToManyField     | Поле для связи "многие ко многим"                 | to, related_name, related_query_name, blank, null  |
-| UUIDField           | Поле для хранения UUID                           | blank, null, default, unique                       |
-| AutoField           | Автоматически увеличивающееся целое поле          | primary_key                                        |
-| BigIntegerField     | Поле для хранения больших целых чисел             | blank, null, default, unique                       |
-| PositiveIntegerField| Поле для хранения положительных целых чисел       | blank, null, default, unique                       |
-| SmallIntegerField   | Поле для хранения небольших целых чисел           | blank, null, default, unique                       |
+| Тип поля             | Описание                                        | Основные параметры                                                    |
+| -------------------- | ----------------------------------------------- | --------------------------------------------------------------------- |
+| CharField            | Строковое поле с ограниченной длиной            | max_length, blank, null, default, unique                              |
+| TextField            | Поле для хранения больших текстовых данных      | blank, null, default                                                  |
+| IntegerField         | Поле для хранения целых чисел                   | blank, null, default, unique                                          |
+| FloatField           | Поле для хранения чисел с плавающей точкой      | blank, null, default, unique                                          |
+| DecimalField         | Поле для хранения десятичных чисел              | max_digits, decimal_places, blank, null, default                      |
+| BooleanField         | Поле для хранения булевых значений (True/False) | default                                                               |
+| DateField            | Поле для хранения дат                           | blank, null, default, auto_now, auto_now_add                          |
+| DateTimeField        | Поле для хранения дат и времени                 | blank, null, default, auto_now, auto_now_add                          |
+| TimeField            | Поле для хранения времени                       | blank, null, default, auto_now, auto_now_add                          |
+| EmailField           | Поле для хранения email адресов                 | max_length, blank, null, default, unique                              |
+| URLField             | Поле для хранения URL                           | max_length, blank, null, default, unique                              |
+| SlugField            | Поле для хранения slug (короткий метки)         | max_length, blank, null, default, unique                              |
+| FileField            | Поле для загрузки файлов                        | upload_to, blank, null, default                                       |
+| ImageField           | Поле для загрузки изображений                   | upload_to, blank, null, default                                       |
+| ForeignKey           | Поле для связи "многие к одному"                | to, on_delete, related_name, related_query_name, blank, null, default |
+| OneToOneField        | Поле для связи "один к одному"                  | to, on_delete, related_name, related_query_name, blank, null, default |
+| ManyToManyField      | Поле для связи "многие ко многим"               | to, related_name, related_query_name, blank, null                     |
+| UUIDField            | Поле для хранения UUID                          | blank, null, default, unique                                          |
+| AutoField            | Автоматически увеличивающееся целое поле        | primary_key                                                           |
+| BigIntegerField      | Поле для хранения больших целых чисел           | blank, null, default, unique                                          |
+| PositiveIntegerField | Поле для хранения положительных целых чисел     | blank, null, default, unique                                          |
+| SmallIntegerField    | Поле для хранения небольших целых чисел         | blank, null, default, unique                                          |
 
 - **max_length**: Максимальная длина строки.
 - **blank**: Может ли поле быть пустым.
@@ -4131,37 +4134,234 @@ post_to_delete.delete()
 
 ### Сводная таблица основных методов менеджера объектов в Django ORM
 
-| Метод                          | Описание                                                                             |
-|--------------------------------|--------------------------------------------------------------------------------------|
-| `all()`                        | Возвращает кверисет, содержащий все записи модели                                     |
-| `filter(**kwargs)`             | Возвращает кверисет, содержащий записи, соответствующие указанным условиям           |
-| `exclude(**kwargs)`            | Возвращает кверисет, исключающий записи, соответствующие указанным условиям          |
-| `get(**kwargs)`                | Возвращает одну запись, соответствующую указанным условиям                           |
-| `create(**kwargs)`             | Создает и сохраняет новую запись в базе данных                                       |
-| `bulk_create(objs)`            | Создает несколько новых записей за один раз                                          |
-| `update(**kwargs)`             | Обновляет записи, соответствующие указанным условиям                                 |
-| `delete()`                     | Удаляет записи, соответствующие указанным условиям                                   |
-| `count()`                      | Возвращает количество записей в кверисете                                            |
-| `first()`                      | Возвращает первую запись из кверисета                                                |
-| `last()`                       | Возвращает последнюю запись из кверисета                                             |
-| `latest(field_name=None)`      | Возвращает последнюю запись, отсортированную по указанному полю                      |
-| `earliest(field_name=None)`    | Возвращает самую раннюю запись, отсортированную по указанному полю                   |
-| `exists()`                     | Возвращает `True`, если кверисет содержит хотя бы одну запись                        |
-| `values(*fields)`              | Возвращает кверисет, содержащий словари с указанными полями                          |
-| `values_list(*fields, flat=False)` | Возвращает кверисет, содержащий кортежи с указанными полями                       |
-| `distinct()`                   | Возвращает кверисет, содержащий уникальные записи                                    |
-| `order_by(*fields)`            | Возвращает кверисет, отсортированный по указанным полям                              |
-| `reverse()`                    | Возвращает кверисет, отсортированный в обратном порядке                              |
-| `select_related(*fields)`      | Возвращает кверисет с "жадной" загрузкой связей "ForeignKey"                         |
-| `prefetch_related(*lookups)`   | Возвращает кверисет с предварительной загрузкой связей "ManyToMany" и "ForeignKey"   |
-| `annotate(*args, **kwargs)`    | Возвращает кверисет с аннотациями, добавленными к каждой записи                      |
-| `aggregate(*args, **kwargs)`   | Возвращает словарь с агрегатными значениями для указанных полей                      |
-| `get_or_create(**kwargs)`      | Получает или создает запись, соответствующую указанным условиям                      |
-| `update_or_create(**kwargs)`   | Обновляет или создает запись, соответствующую указанным условиям                     |
-| `raw(raw_query, params=None)`  | Выполняет необработанный SQL-запрос и возвращает кверисет                            |
-| `iterator(chunk_size=2000)`    | Возвращает итератор для обработки записей в кверисете по частям                      |
+| Метод                              | Описание                                                                           |
+| ---------------------------------- | ---------------------------------------------------------------------------------- |
+| `all()`                            | Возвращает кверисет, содержащий все записи модели                                  |
+| `filter(**kwargs)`                 | Возвращает кверисет, содержащий записи, соответствующие указанным условиям         |
+| `exclude(**kwargs)`                | Возвращает кверисет, исключающий записи, соответствующие указанным условиям        |
+| `get(**kwargs)`                    | Возвращает одну запись, соответствующую указанным условиям                         |
+| `create(**kwargs)`                 | Создает и сохраняет новую запись в базе данных                                     |
+| `bulk_create(objs)`                | Создает несколько новых записей за один раз                                        |
+| `update(**kwargs)`                 | Обновляет записи, соответствующие указанным условиям                               |
+| `delete()`                         | Удаляет записи, соответствующие указанным условиям                                 |
+| `count()`                          | Возвращает количество записей в кверисете                                          |
+| `first()`                          | Возвращает первую запись из кверисета                                              |
+| `last()`                           | Возвращает последнюю запись из кверисета                                           |
+| `latest(field_name=None)`          | Возвращает последнюю запись, отсортированную по указанному полю                    |
+| `earliest(field_name=None)`        | Возвращает самую раннюю запись, отсортированную по указанному полю                 |
+| `exists()`                         | Возвращает `True`, если кверисет содержит хотя бы одну запись                      |
+| `values(*fields)`                  | Возвращает кверисет, содержащий словари с указанными полями                        |
+| `values_list(*fields, flat=False)` | Возвращает кверисет, содержащий кортежи с указанными полями                        |
+| `distinct()`                       | Возвращает кверисет, содержащий уникальные записи                                  |
+| `order_by(*fields)`                | Возвращает кверисет, отсортированный по указанным полям                            |
+| `reverse()`                        | Возвращает кверисет, отсортированный в обратном порядке                            |
+| `select_related(*fields)`          | Возвращает кверисет с "жадной" загрузкой связей "ForeignKey"                       |
+| `prefetch_related(*lookups)`       | Возвращает кверисет с предварительной загрузкой связей "ManyToMany" и "ForeignKey" |
+| `annotate(*args, **kwargs)`        | Возвращает кверисет с аннотациями, добавленными к каждой записи                    |
+| `aggregate(*args, **kwargs)`       | Возвращает словарь с агрегатными значениями для указанных полей                    |
+| `get_or_create(**kwargs)`          | Получает или создает запись, соответствующую указанным условиям                    |
+| `update_or_create(**kwargs)`       | Обновляет или создает запись, соответствующую указанным условиям                   |
+| `raw(raw_query, params=None)`      | Выполняет необработанный SQL-запрос и возвращает кверисет                          |
+| `iterator(chunk_size=2000)`        | Возвращает итератор для обработки записей в кверисете по частям                    |
 
 Эта таблица охватывает основные методы менеджера объектов в Django, которые позволяют эффективно взаимодействовать с базой данных и выполнять различные операции над данными.
+
+---
+
+## Усложняем модель. Адаптируем сайт.
+### views.py
+
+```python
+from django.shortcuts import render, get_object_or_404
+from .models import Post
+
+def blog_catalog(request):
+    """
+    Вьюшка для страницы "Блог" с каталогом постов.
+    Обрабатываем поисковую форму, которая обрабатывается методом GET
+    """
+    if request.method == "GET":
+        search = request.GET.get("search")
+        search_in_title = request.GET.get("searchInTitle")
+        search_in_text = request.GET.get("searchInText")
+        search_in_tags = request.GET.get("searchInTags")
+
+        posts_filtered = Post.objects.all()
+        
+        if search:
+            if not search_in_title and not search_in_text and not search_in_tags:
+                posts_filtered = posts_filtered.filter(text__icontains=search)
+            if search_in_title:
+                posts_filtered = posts_filtered.filter(title__icontains=search)
+            if search_in_text:
+                posts_filtered = posts_filtered.filter(text__icontains=search)
+            if search_in_tags:
+                posts_filtered = posts_filtered.filter(tags__name__icontains=search)
+
+        context = {
+            "posts": posts_filtered,
+        }
+        return render(request, "blog/blog_catalog.html", context)
+
+
+def post_detail(request, slug):
+    """
+    Вьюшка для отображения отдельного поста.
+    """
+    post = get_object_or_404(Post, slug=slug)
+    context = {
+        "post": post,
+    }
+    return render(request, "blog/post_detail.html", context)
+```
+
+### urls.py
+
+```python
+from django.urls import path
+from .views import blog_catalog, post_detail
+
+urlpatterns = [
+    path('', blog_catalog, name='blog_catalog'),
+    path('<slug:slug>/', post_detail, name='post_detail'),
+]
+```
+
+### blog_catalog.html
+
+```html
+{% extends "base.html" %}
+{% comment %} blog/templates/blog/blog_catalog.html {% endcomment %}
+{% load static %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/blog_catalog.css' %}" />
+{% endblock %}
+{% block title %}Блог{% endblock %}
+{% block content %}
+<h1 class="mt-3">Это блог!</h1>
+<p>Здесь вы найдете много интересного и полезного!</p>
+{% comment %} Поисковая форма BS5 с чекбоксами {% endcomment %}
+<form class="mb-5 mt-3">
+    <div class="input-group mb-3">
+        <input class="form-control" type="search" placeholder="Поиск" aria-label="Search" name="search">
+        <button class="btn btn-dark" type="submit">Поиск</button>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInTitle" id="searchInTitle">
+        <label class="form-check-label" for="searchInTitle">Заголовок</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInText" id="searchInText">
+        <label class="form-check-label" for="searchInText">Текст</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInTags" id="searchInTags">
+        <label class="form-check-label" for="searchInTags">Теги</label>
+    </div>
+</form>
+{% comment %} Отрисовка постов циклом {% endcomment %}
+<div class="row">
+    {% for post in posts %}
+        <div class="col-12 mb-4">
+            {% include "includes/post_preview.html" %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+```
+
+### post_detail.html
+
+```html
+{% extends 'base.html' %}
+{% comment %} blog/templates/blog/post_detail.html {% endcomment %}
+{% load markdown_to_html %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{% markdown_to_html post.title %}</h5>
+            <p class="card-text">{% markdown_to_html post.text %}</p>
+            <p class="card-text"><strong>Автор:</strong> {{ post.author|default:"Автор не известен" }}</p>
+            <p class="card-text"><strong>Дата публикации:</strong> {{ post.published_date }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="me-3"><i class="bi bi-chat-dots"></i> {{ post.comments|length }}</span>
+                </div>
+                <div>
+                    <a href="{% url 'blog_catalog' %}" class="btn btn-dark d-block d-md-none">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <a href="{% url 'blog_catalog' %}" class="btn btn-dark d-none d-md-block">
+                        Вернуться к каталогу
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <h5>Комментарии</h5>
+        {% for comment in post.comments.all %}
+            {% include "includes/comment_include.html" %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+```
+
+
+## Пояснения к изменениям и коду.
+
+#### 1. Вьюшка для страницы "Блог" (blog_catalog)
+
+Эта вьюшка отвечает за отображение страницы каталога постов. В ней обрабатывается поисковая форма, которая позволяет пользователю искать посты по заголовку, тексту и тегам.
+
+- **Получение данных**: При отправке формы методом GET, мы получаем значения из полей формы (поисковая строка и чекбоксы).
+- **Фильтрация постов**: В зависимости от того, какие чекбоксы выбраны, мы фильтруем посты по заголовку, тексту или тегам. Если чекбоксы не выбраны, поиск производится только по тексту.
+- **Передача контекста**: В контекст передается отфильтрованный QuerySet постов или все посты, если поисковая строка пуста.
+
+#### 2. Вьюшка для отображения отдельного поста (post_detail)
+
+Эта вьюшка отвечает за отображение страницы с детальной информацией о посте. 
+
+- **Получение данных**: Мы получаем пост по его слагу из базы данных. Если пост с таким слагом не найден, возвращается ошибка 404.
+- **Передача контекста**: В контекст передается найденный пост.
+
+#### 3. Маршрутизация (urls.py)
+
+Мы настроили маршруты для нашей страницы каталога постов и для детальной страницы поста.
+
+- **Маршрут для каталога постов**: Путь `''` (корневой URL) соответствует вьюшке `blog_catalog`.
+- **Маршрут для детальной страницы поста**: Путь `'<slug:slug>/'` соответствует вьюшке `post_detail`. Конвертер `slug` используется для получения слага поста из URL.
+
+#### 4. Шаблон для каталога постов (blog_catalog.html)
+
+Этот шаблон отвечает за отображение всех постов на странице каталога.
+
+- **Подключение CSS**: В блоке `head` подключается CSS-файл для стилей страницы.
+- **Заголовок страницы**: В блоке `title` указывается заголовок страницы "Блог".
+- **Форма поиска**: Создана поисковая форма с полем ввода и чекбоксами для выбора параметров поиска (заголовок, текст, теги).
+- **Отрисовка постов**: С помощью цикла `for` шаблон проходит по всем постам и включает для каждого из них шаблон `post_preview.html`.
+
+#### 5. Шаблон для детальной страницы поста (post_detail.html)
+
+Этот шаблон отвечает за отображение информации о конкретном посте.
+
+- **Заголовок страницы**: В блоке `title` указывается заголовок страницы, который соответствует заголовку поста.
+- **Основное содержимое**: В блоке `content` отображается основная информация о посте:
+  - Заголовок поста.
+  - Текст поста, преобразованный из Markdown в HTML.
+  - Автор поста (если автор не указан, отображается текст "Автор не известен").
+  - Дата публикации поста.
+  - Количество комментариев к посту.
+  - Ссылки для возврата к каталогу постов.
+  - Список комментариев, если они есть, с использованием шаблона `comment_include.html`.
+
+### Итог
+
+Эти изменения позволяют эффективно управлять отображением постов в блоге и их детальными страницами, используя мощные возможности Django для работы с моделями, представлениями и шаблонами. Мы применили фильтрацию данных, маршрутизацию и динамическое формирование контента, чтобы создать удобный и функциональный интерфейс для пользователей.
+
 
 ---
 
@@ -4873,3 +5073,6 @@ QuerySet — это мощный инструмент Django ORM, который
 ### Заключение
 
 Мы создали категории, теги, пользователей и посты, используя менеджер объектов Django. Также выполнили различные операции с данными, такие как создание, чтение, обновление и удаление записей, а также работу с отношениями между моделями. Это позволяет нам эффективно управлять данными и выполнять различные операции с помощью Django ORM.
+
+---
+
