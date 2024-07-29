@@ -6403,3 +6403,346 @@ AND id IN (SELECT post_id FROM post_tags WHERE tag_id IN (1, 2));
 Q объекты в Django ORM позволяют создавать сложные запросы, комбинируя условия с помощью логических операторов. Это делает ваш код более гибким и читаемым, а также упрощает работу с базой данных. Теперь вы можете использовать эти примеры для построения собственных запросов в вашем проекте.
 
 Теперь у вас есть не только понимание работы с Q объектами в Django ORM, но и аналогичные SQL запросы для выполнения тех же операций в SQLite.
+
+### Решение для домашнего задания
+
+#### Часть 1: Работа с F-объектами
+
+1. **Добавление поля просмотров**
+
+```python
+# models.py
+from django.db import models
+from django.contrib.auth import get_user_model
+from django.utils.text import slugify
+from unidecode import unidecode
+
+class Post(models.Model):
+    """
+    Модель поста
+    """
+    title = models.CharField(max_length=200)
+    text = models.TextField()
+    slug = models.SlugField(unique=True)
+    author = models.ForeignKey(get_user_model(), on_delete=models.CASCADE)
+    category = models.ForeignKey("Category", on_delete=models.CASCADE, related_name="posts", null=True, default=None)
+    tags = models.ManyToManyField("Tag", related_name="posts")
+    published_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+    views = models.IntegerField(default=0)  # Новое поле для количества просмотров
+
+    def save(self, *args, **kwargs):
+        """
+        Переопределение метода save для автоматической генерации slug
+        """
+        if not self.slug or self.slug == "":
+            self.slug = slugify(unidecode(self.title))
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        """
+        Строковое представление модели
+        """
+        return f"{self.title}: {self.slug}"
+
+    def get_absolute_url(self):
+        """
+        Метод для получения абсолютного URL поста
+        """
+        return f"/blog/{self.slug}/"
+```
+
+2. **Обновление представления для увеличения просмотров**
+
+```python
+# views.py
+from django.db.models import F
+from django.shortcuts import render, get_object_or_404
+from django.http import HttpRequest
+from .models import Post
+
+menu = [
+    {"name": "Главная", "alias": "main"},
+    {"name": "Блог", "alias": "blog_catalog"},
+    {"name": "О проекте", "alias": "about"},
+]
+
+def post_detail(request: HttpRequest, slug: str):
+    """
+    Функция - представление для отдельной статьи
+    Принимает объект запроса HttpRequest и slug статьи
+    Отображает статью с соответствующим slug
+    """
+    post = get_object_or_404(Post, slug=slug)
+    post.views = F('views') + 1
+    post.save(update_fields=['views'])
+
+    context = {
+        "menu": menu,
+        "post": post,
+        "page_alias": "blog_catalog",
+    }
+    return render(request, "blog/post_detail.html", context)
+```
+
+#### Часть 2: Работа с поисковой формой
+
+1. **Обновление представления для обработки поисковых запросов**
+
+```python
+# views.py
+from django.db.models import Q
+
+def blog_catalog(request):
+    """
+    Вьюшка для страницы "Блог" с каталогом постов.
+    Обрабатываем поисковую форму, которая обрабатывается методом GET
+    И пробуем получить от туда ключи:
+        search
+        searchInTitle
+        searchInText
+        searchInTags
+    """
+    posts = Post.objects.all()
+
+    if request.method == "GET":
+        search = request.GET.get("search")
+        search_in_title = request.GET.get("searchInTitle")
+        search_in_text = request.GET.get("searchInText")
+        search_in_tags = request.GET.get("searchInTags")
+        
+        if search:
+            query = Q()
+            if search_in_title:
+                query |= Q(title__icontains=search)
+            if search_in_text:
+                query |= Q(text__icontains=search)
+            if search_in_tags:
+                query |= Q(tags__name__icontains=search)
+            if not (search_in_title or search_in_text or search_in_tags):
+                query = Q(text__icontains=search)
+            
+            posts = posts.filter(query).distinct()
+        
+    context = {
+        "menu": menu,
+        "posts": posts,
+        "page_alias": "blog_catalog",
+    }
+    return render(request, "blog/blog_catalog.html", context)
+```
+
+2. **Обновление шаблона для поисковой формы**
+
+```html
+<!-- blog_catalog.html -->
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/blog_catalog.css' %}" />
+{% endblock %}
+{% block title %}Блог{% endblock %}
+{% block content %}
+<h1 class="mt-3">Это блог!</h1>
+<p>Здесь вы найдете много интересного и полезного!</p>
+<form class="mb-5 mt-3" method="get">
+    <div class="input-group mb-3">
+        <input class="form-control" type="search" placeholder="Поиск" aria-label="Search" name="search">
+        <button class="btn btn-dark" type="submit">Поиск</button>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInTitle" id="searchInTitle">
+        <label class="form-check-label" for="searchInTitle">Заголовок</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInText" id="searchInText">
+        <label class="form-check-label" for="searchInText">Текст</label>
+    </div>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" name="searchInTags" id="searchInTags">
+        <label class="form-check-label" for="searchInTags">Теги</label>
+    </div>
+</form>
+<div class="row">
+    {% for post in posts %}
+        <div class="col-12 mb-4">
+            {% include "includes/post_preview.html" %}
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}
+```
+
+### Дополнительные файлы
+
+1. **Шаблон поста (предпросмотр)**
+
+```html
+<!-- post_preview.html -->
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{{ post.title }}</h5>
+        <p class="card-text">{{ post.text|truncatechars:200 }}</p>
+        <p class="card-text"><strong>Просмотры:</strong> {{ post.views }}</p>
+        <a href="{% url 'post_detail' post.slug %}" class="btn btn-dark">Читать дальше</a>
+    </div>
+</div>
+```
+
+2. **Шаблон детального отображения поста**
+
+```html
+<!-- post_detail.html -->
+{% extends 'base.html' %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title">{{ post.title }}</h5>
+            <p class="card-text">{{ post.text }}</p>
+            <p class="card-text"><strong>Автор:</strong> {{ post.author|default:"Автор не известен" }}</p>
+            <p class="card-text"><strong>Дата публикации:</strong> {{ post.published_date }}</p>
+            <p class="card-text"><strong>Просмотры:</strong> {{ post.views }}</p>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="me-3"><i class="bi bi-chat-dots"></i> {{ post.comments.count }}</span>
+                </div>
+                <div>
+                    <a href="{% url 'blog_catalog' %}" class="btn btn-dark d-block d-md-none">
+                        <i class="bi bi-arrow-left"></i>
+                    </a>
+                    <a href="{% url 'blog_catalog' %}" class="btn btn-dark d-none d-md-block">
+                        Вернуться к каталогу
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4">
+        <h5>Комментарии</h5>
+        {% for comment in post.comments.all %}
+            {% include "includes/comment_include.html" %}
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+```
+
+### Пример использования Q объектов
+
+**Пример поиска постов по нескольким условиям**
+
+```python
+from django.db.models import Q
+
+# Поиск постов, которые содержат слово 'Python' в заголовке или тексте, и относятся к категории с id 1
+posts = Post.objects.filter(
+    Q(title__icontains='Python') | Q(text__icontains='Python'),
+    category_id=1
+)
+```
+
+**Пример поиска постов, написанных автором с определенным именем и статусом комментариев**
+
+```python
+# Поиск постов, написанных автором user1, у которых есть проверенные комментарии
+from django.contrib.auth import get_user_model
+User = get_user_model()
+user1 = User.objects.get(username='user1')
+
+posts = Post.objects.filter(
+    Q(author=user1) & Q(comments__status='checked')
+)
+```
+
+### Заключение
+
+Добавив поле просмотров и обновив поисковую форму, вы сделали ваш блог более интерактивным и удобным для пользователей. Теперь вы можете применять эти методы и подходы для дальнейшего улучшения функциональности вашего Django-приложения.
+
+### Максимально детальные пояснения по F-запросам в этом коде
+
+#### Что такое F-запросы?
+
+F-запросы в Django ORM представляют собой специальные выражения, которые позволяют вам ссылаться на значения полей модели напрямую в базе данных. Это очень полезно, когда вы хотите выполнить обновление поля, используя текущее значение этого поля или значение другого поля в той же записи, не загружая объект в память.
+
+#### Зачем нужны F-запросы?
+
+F-запросы помогают:
+1. Выполнять атомарные операции: Они гарантируют, что обновление поля будет выполнено в одном запросе к базе данных, что исключает проблемы, связанные с условиями гонки.
+2. Оптимизировать производительность: Обновления выполняются на стороне базы данных, что экономит ресурсы сервера приложения.
+3. Поддерживать согласованность данных: Поскольку обновление выполняется в базе данных, риск ошибок, связанных с конкурентными изменениями данных, минимизируется.
+
+#### Пример использования F-запросов в коде
+
+В представлении `post_detail`, при каждом открытии страницы поста, количество просмотров увеличивается на 1 с использованием F-запроса.
+
+##### Обновление количества просмотров
+
+Когда пользователь открывает страницу поста, нам нужно увеличить значение поля `views` (количество просмотров) на 1. Для этого мы используем F-запросы следующим образом:
+
+1. **Получение объекта поста**:
+   - Сначала мы используем функцию `get_object_or_404`, чтобы получить объект поста по его `slug` (уникальному идентификатору).
+
+2. **Использование F-запроса для обновления поля**:
+   - Вместо того, чтобы загружать текущее значение поля `views`, увеличивать его на 1 и затем снова сохранять объект, мы используем `post.views = F('views') + 1`.
+   - `F('views')` создаёт выражение, ссылающееся на текущее значение поля `views` в базе данных.
+   - `F('views') + 1` означает, что мы хотим увеличить текущее значение на 1.
+
+3. **Сохранение изменений**:
+   - Мы вызываем `post.save(update_fields=['views'])`, чтобы сохранить изменения. Параметр `update_fields` указывает Django, что нужно обновить только поле `views`, что делает запрос более эффективным.
+
+##### Почему F-запросы лучше?
+
+- **Атомарность**: Обновление поля `views` на 1 выполняется в одном запросе к базе данных, что исключает возможность условий гонки, которые могут возникнуть, если несколько пользователей одновременно откроют страницу поста.
+- **Оптимизация производительности**: Все вычисления выполняются на уровне базы данных, что снижает нагрузку на сервер приложения.
+- **Согласованность данных**: Обновление выполняется на стороне базы данных, что минимизирует риск ошибок, связанных с конкурентными изменениями данных.
+
+### Заключение
+
+Использование F-запросов в Django ORM позволяет выполнять атомарные и эффективные обновления данных прямо на уровне базы данных. Это особенно полезно в случаях, когда нужно обновить поле на основе его текущего значения, как в примере с увеличением количества просмотров поста. F-запросы обеспечивают производительность, согласованность данных и предотвращение условий гонки, что делает их мощным инструментом для работы с базой данных в Django.
+
+### Максимально детальные пояснения по Q-запросам в этом коде
+
+#### Что такое Q-запросы?
+
+Q-запросы в Django ORM представляют собой специальный класс, который позволяет создавать сложные условия для фильтрации данных. Они позволяют объединять условия с помощью логических операторов, таких как "И" (AND) и "ИЛИ" (OR). Q-запросы очень полезны, когда нужно формировать запросы с гибкими и динамическими условиями.
+
+#### Зачем нужны Q-запросы?
+
+Q-запросы помогают:
+1. Создавать сложные условия: Они позволяют объединять несколько условий в одном запросе.
+2. Делать запросы более гибкими: С их помощью можно легко управлять условиями поиска, комбинируя их по необходимости.
+3. Упрощать код: Код становится более читаемым и понятным, когда логика фильтрации вынесена в отдельные Q-объекты.
+
+#### Пример использования Q-запросов в коде
+
+В представлении `blog_catalog`, Q-запросы используются для реализации поиска постов по различным критериям, таким как заголовок, текст и теги.
+
+##### Фильтрация постов на основе поискового запроса
+
+1. **Получение данных из запроса**:
+   - Мы извлекаем поисковый запрос и состояния чекбоксов из параметров GET-запроса: `search`, `search_in_title`, `search_in_text`, `search_in_tags`.
+
+2. **Создание Q-объектов**:
+   - Если параметр `search` присутствует, мы создаём Q-объекты для каждого условия поиска.
+   - `Q(title__icontains=search)`: Фильтрует посты, у которых заголовок содержит строку поиска (регистронезависимый поиск).
+   - `Q(text__icontains=search)`: Фильтрует посты, у которых текст содержит строку поиска.
+   - `Q(tags__name__icontains=search)`: Фильтрует посты, у которых теги содержат строку поиска.
+
+3. **Комбинирование Q-объектов**:
+   - Если активирован хотя бы один из чекбоксов (например, `search_in_title`, `search_in_text` или `search_in_tags`), мы комбинируем соответствующие Q-объекты с помощью оператора "ИЛИ" (|).
+   - Если ни один чекбокс не активирован, поиск выполняется только по тексту поста.
+
+4. **Применение фильтрации**:
+   - Мы применяем созданные Q-объекты в методе `filter` для получения нужных постов.
+   - Пример кода: `posts_filtered = Post.objects.filter(Q(title__icontains=search) | Q(text__icontains=search) | Q(tags__name__icontains=search))`.
+
+##### Почему Q-запросы лучше?
+
+- **Гибкость**: Q-запросы позволяют легко добавлять, удалять или комбинировать условия поиска, что делает код более гибким.
+- **Читаемость**: Код становится более структурированным и понятным, так как логика фильтрации вынесена в отдельные Q-объекты.
+- **Упрощение сложных условий**: Q-запросы позволяют создавать сложные логические условия без необходимости писать множество отдельных фильтров.
+
+### Заключение
+
+Использование Q-запросов в Django ORM позволяет создавать гибкие и сложные условия фильтрации данных. В примере с представлением `blog_catalog`, Q-запросы используются для поиска постов по различным критериям, таким как заголовок, текст и теги. Q-запросы обеспечивают гибкость, читаемость и упрощение сложных условий, что делает их мощным инструментом для работы с базой данных в Django.
